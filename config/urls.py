@@ -24,4 +24,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema-swagger"),
     path("api/", include("apps.ensurance.urls")),
+    path("api/", include("apps.common.urls")),
 ]

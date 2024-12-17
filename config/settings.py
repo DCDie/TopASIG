@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+from django.utils.translation import gettext_lazy as _
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Internal apps
     "apps.ensurance",
+    "apps.common",
 ]
 
 MIDDLEWARE = [
@@ -139,6 +142,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "static"
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -172,3 +179,13 @@ SPECTACULAR_SETTINGS = {
 RCA_USERNAME = "username"
 RCA_PASSWORD = "password"
 RCA_URL = "https://rcaapi-test.bnm.md/RcaExportService.asmx?WSDL"
+
+# Locales
+DEFAULT_LANG = "en"
+LANGUAGES = [
+    (DEFAULT_LANG, _("English")),
+    ("ro", _("Romanian")),
+    ("ru", _("Russian")),
+]
+
+LOCALE_PATHS = (BASE_DIR / "locale",)
