@@ -1,4 +1,6 @@
+import zeep
 from django.conf import settings
+from rest_framework.exceptions import APIException, ValidationError
 from zeep import Client
 from zeep.transports import Transport
 
@@ -24,7 +26,7 @@ class RcaExportServiceClient:
         """
 
         author_type = self.client.get_type("ns0:AuthorizationInfo")
-        author = author_type(UserName=username, UserPassword=password)
+        author = author_type(UserName=username, UserPassword=password, SecurityToken=zeep.xsd.SkipValue)
 
         # Call the Authenticate operation
         response = self.service.Authenticate(author=author)
@@ -46,52 +48,76 @@ class RcaExportServiceClient:
         response = self.service.CheckAccess(login=login, password=password)
         return response
 
-    def calculate_rcai_premium(self, operating_modes, person_is_juridical, territory, idnp=None, idnx=None, vrcn=None):
+    def calculate_rca(
+        self,
+        OperatingModes: str,
+        PersonIsJuridical: bool,
+        Territory: str,
+        IDNX: str,
+        VehicleRegistrationCertificateNumber: str,
+        IDNP: str = settings.ASIG_IDNP
+    ):
         """
-        Calls CalculateRCAIPremium.
+        Calls CalculateRCAIPremium. Calculates the RCA cost for a given set of input parameters.
 
         You may supply employee IDNP if needed. If so, construct Employee object.
         """
-        # Create Employee if needed
-        EmployeeType = self.client.get_type("ns0:EmployeeInput")
-        employee = None
-        if idnp:
-            employee = EmployeeType(IDNP=idnp)
+        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
 
         RequestType = self.client.get_type("ns0:CalculateRCAIPremiumRequest")
         request_obj = RequestType(
-            Employee=employee,
-            OperatingModes=operating_modes,
-            PersonIsJuridical=person_is_juridical,
-            IDNX=idnx,
-            VehicleRegistrationCertificateNumber=vrcn,
-            Territory=territory,  # Must be one of the defined enumeration values
+            Employee=Employee,
+            OperatingModes=OperatingModes,
+            PersonIsJuridical=PersonIsJuridical,
+            IDNX=IDNX,
+            VehicleRegistrationCertificateNumber=VehicleRegistrationCertificateNumber,
+            Territory=Territory,
         )
+        try:
+            self.authenticate()
+            response = self.service.CalculateRCAIPremium(SecurityToken=self.security_token, request=request_obj)
+        except Exception as e:  # noqa: BLE001
+            raise APIException(detail={"detail": str(e)}) from e
+        if response.IsSuccess is False:
+            raise ValidationError(detail={"detail": response.ErrorMessage})
+        return response
 
-        return self.service.CalculateRCAIPremium(SecurityToken=self.security_token, request=request_obj)
-
-    def calculate_rcae_premium(self, greencard_zone, term_insurance, idnp=None, idnx=None, vrcn=None):
+    def calculate_green_card(
+        self,
+        GreenCardZone: str,
+        TermInsurance: str,
+        IDNX: str,
+        VehicleRegistrationCertificateNumber: str,
+        IDNP: str = settings.ASIG_IDNP,
+    ):
         """
-        Calls CalculateRCAEPremium.
+        Calls CalculateRCAEPremium. Calculates the Green Card cost for a given set of input parameters.
 
         Parameters:
-            greencard_zone (str): "Z1" or "Z3"
-            term_insurance (str): "d15", "m1", ... "m12"
+            GreenCardZone (str): GreenCardZone enum value.
+            TermInsurance (str): TermInsurance enum value.
+            IDNX (str): IDNP or IDNO.
+            VehicleRegistrationCertificateNumber (str): Vehicle Registration Certificate Number.
+            IDNP (str): Employee IDNP.
         """
-        EmployeeType = self.client.get_type("ns0:EmployeeInput")
-        employee = None
-        if idnp:
-            employee = EmployeeType(IDNP=idnp)
+        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
 
         RequestType = self.client.get_type("ns0:CalculateRCAEPremiumRequest")
         request_obj = RequestType(
-            Employee=employee,
-            GreenCardZone=greencard_zone,
-            IDNX=idnx,
-            VehicleRegistrationCertificateNumber=vrcn,
-            TermInsurance=term_insurance,
+            Employee=Employee,
+            GreenCardZone=GreenCardZone,
+            IDNX=IDNX,
+            VehicleRegistrationCertificateNumber=VehicleRegistrationCertificateNumber,
+            TermInsurance=TermInsurance,
         )
-        return self.service.CalculateRCAEPremium(SecurityToken=self.security_token, request=request_obj)
+        try:
+            self.authenticate()
+            response = self.service.CalculateRCAEPremium(SecurityToken=self.security_token, request=request_obj)
+        except Exception as e:  # noqa: BLE001
+            raise APIException(detail={"detail": str(e)}) from e
+        if response.IsSuccess is False:
+            raise ValidationError(detail={"detail": response.ErrorMessage})
+        return response
 
     def get_file(self, document_id, document_type, contract_type):
         """

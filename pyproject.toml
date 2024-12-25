@@ -51,6 +51,10 @@ lint.select = [
     "UP", # pyupgrade
 ]
 
+lint.ignore = [
+    "N803", "N806"
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

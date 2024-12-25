@@ -9,17 +9,14 @@ from apps.ensurance.constants import (
 )
 
 
-class CalculateRCAIPremiumInputSerializer(serializers.Serializer):
-    idnp = serializers.CharField(required=False, allow_blank=True, allow_null=True, help_text="IDNP of employee")
-    operating_modes = serializers.ChoiceField(choices=OperationModes.choices)
-    person_is_juridical = serializers.BooleanField()
-    territory = serializers.ChoiceField(choices=Territories.choices)
-
-    # Optional fields
-    idnx = serializers.CharField(
+class CalculateRCAInputSerializer(serializers.Serializer):
+    OperatingModes = serializers.ChoiceField(choices=OperationModes.choices)
+    PersonIsJuridical = serializers.BooleanField(default=False)
+    Territory = serializers.ChoiceField(choices=Territories.choices)
+    IDNX = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, max_length=13, min_length=13, help_text="IDNP or IDNO"
     )
-    vrcn = serializers.CharField(
+    VehicleRegistrationCertificateNumber = serializers.CharField(
         required=False,
         allow_blank=True,
         allow_null=True,
@@ -29,19 +26,10 @@ class CalculateRCAIPremiumInputSerializer(serializers.Serializer):
     )
 
 
-class CalculateRCAEPremiumInputSerializer(serializers.Serializer):
-    idnp = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
-        help_text="IDNP of employee",
-    )
-
-    greencard_zone = serializers.ChoiceField(choices=GreenCardZones.choices)
-    term_insurance = serializers.ChoiceField(choices=TermInsurance.choices)
-
-    # Optional fields
-    idnx = serializers.CharField(
+class CalculateGreenCardInputSerializer(serializers.Serializer):
+    GreenCardZone = serializers.ChoiceField(choices=GreenCardZones.choices)
+    TermInsurance = serializers.ChoiceField(choices=TermInsurance.choices)
+    IDNX = serializers.CharField(
         required=False,
         allow_blank=True,
         allow_null=True,
@@ -49,7 +37,7 @@ class CalculateRCAEPremiumInputSerializer(serializers.Serializer):
         max_length=13,
         min_length=13,
     )
-    vrcn = serializers.CharField(
+    VehicleRegistrationCertificateNumber = serializers.CharField(
         required=False,
         allow_blank=True,
         allow_null=True,
@@ -59,14 +47,14 @@ class CalculateRCAEPremiumInputSerializer(serializers.Serializer):
     )
 
 
-class CalculateRCAIPremiumOutputSerializer(serializers.Serializer):
+class CalculateRCAOutputSerializer(serializers.Serializer):
     PrimeSum = serializers.DecimalField(max_digits=15, decimal_places=2)
     BonusMalusClass = serializers.IntegerField()
     IsSuccess = serializers.BooleanField()
     ErrorMessage = serializers.CharField(allow_null=True, allow_blank=True)
 
 
-class CalculateRCAEPremiumOutputSerializer(serializers.Serializer):
+class CalculateGreenCardOutputSerializer(serializers.Serializer):
     PrimeSum = serializers.DecimalField(max_digits=15, decimal_places=2)
     BonusMalusClass = serializers.IntegerField()
     IsSuccess = serializers.BooleanField()

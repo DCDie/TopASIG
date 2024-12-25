@@ -6,10 +6,10 @@ from rest_framework.viewsets import GenericViewSet
 
 from apps.ensurance.rca import RcaExportServiceClient
 from apps.ensurance.serializers import (
-    CalculateRCAEPremiumInputSerializer,
-    CalculateRCAEPremiumOutputSerializer,
-    CalculateRCAIPremiumInputSerializer,
-    CalculateRCAIPremiumOutputSerializer,
+    CalculateGreenCardInputSerializer,
+    CalculateGreenCardOutputSerializer,
+    CalculateRCAInputSerializer,
+    CalculateRCAOutputSerializer,
 )
 
 
@@ -17,64 +17,50 @@ class RcaViewSet(GenericViewSet):
     """
     A ViewSet to handle RCA-related SOAP operations.
     """
+    permission_classes = []
+    authentication_classes = []
 
-    @extend_schema(responses={200: CalculateRCAIPremiumOutputSerializer})
+    @extend_schema(responses={200: CalculateRCAOutputSerializer})
     @action(
         detail=False,
         methods=["post"],
-        url_path="calculate-rcai-premium",
-        serializer_class=CalculateRCAIPremiumInputSerializer,
+        url_path="calculate-rca",
+        serializer_class=CalculateRCAInputSerializer,
     )
-    def calculate_rcai_premium(self, request):
+    def calculate_rca(self, request):
         """
-        Handles the CalculateRCAIPremium SOAP method.
+        Calculates the RCA cost for a given set of input parameters.
         """
         # Validate input data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         # Call the SOAP method
-        try:
-            client = RcaExportServiceClient().authenticate()
-            response = client.calculate_rcai_premium(serializer.validated_data)
-        except Exception as e:
-            return Response(
-                {"detail": "An error occurred while processing the request.", "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        response = RcaExportServiceClient().calculate_rca(**serializer.validated_data)
 
         # Validate and serialize the response
-        output_serializer = CalculateRCAIPremiumOutputSerializer(data=response)
+        output_serializer = CalculateRCAOutputSerializer(data=response)
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(responses={200: CalculateRCAEPremiumOutputSerializer})
+    @extend_schema(responses={200: CalculateGreenCardOutputSerializer})
     @action(
         detail=False,
         methods=["post"],
-        url_path="calculate-rcae-premium",
-        serializer_class=CalculateRCAEPremiumInputSerializer,
+        url_path="calculate-green-card",
+        serializer_class=CalculateGreenCardInputSerializer,
     )
-    def calculate_rcae_premium(self, request):
+    def calculate_green_card(self, request):
         """
-        Handles the CalculateRCAEPremium SOAP method.
+        Calculates the Green Card cost for a given set of input parameters.
         """
         # Validate input data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         # Call the SOAP method
-        try:
-            client = RcaExportServiceClient().authenticate()
-            response = client.calculate_rcae_premium(serializer.validated_data)
-        except Exception as e:
-            # Log the exception as needed
-            return Response(
-                {"detail": "An error occurred while processing the request.", "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        response = RcaExportServiceClient().calculate_green_card(**serializer.validated_data)
 
-        # Validate and serialize the response
-        output_serializer = CalculateRCAEPremiumOutputSerializer(data=response)
+        output_serializer = CalculateGreenCardOutputSerializer(data=response)
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)

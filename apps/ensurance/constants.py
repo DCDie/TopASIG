@@ -3,7 +3,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Territories(models.TextChoices):
-    EMPTY = "EMPTY", _("EMPTY")
     C = "C", _("C")
     BL = "BL", _("BL")
     HN = "HN", _("HN")
@@ -47,8 +46,8 @@ class GreenCardVehicleCategories(models.TextChoices):
 
 
 class OperationModes(models.TextChoices):
-    USUAL = "Usual", _("Usual")
-    MINIBUS = "Minibus", _("Minibus")
-    INTERCITYBUS = "IntercityBus", _("IntercityBus")
-    TAXI = "Taxi", _("Taxi")
-    RENTACAR = "RentACar", _("RentACar")
+    USUAL = "1", _("Usual")
+    MINIBUS = "2", _("Minibus")
+    INTERCITYBUS = "3", _("IntercityBus")
+    TAXI = "4", _("Taxi")
+    RENTACAR = "5", _("RentACar")

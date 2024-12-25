@@ -186,9 +186,9 @@ SPECTACULAR_SETTINGS = {
 }
 
 # RCA Settings
-RCA_USERNAME = "username"
-RCA_PASSWORD = "password"
-RCA_URL = "https://rcaapi-test.bnm.md/RcaExportService.asmx?WSDL"
+RCA_USERNAME = env.str("RCA_USERNAME")
+RCA_PASSWORD = env.str("RCA_PASSWORD")
+RCA_URL = env.str("RCA_URL", default="https://rcaapi-test.bnm.md/RcaExportService.asmx?WSDL")
 
 # Locales
 DEFAULT_LANG = "en"
@@ -199,3 +199,6 @@ LANGUAGES = [
 ]
 
 LOCALE_PATHS = (BASE_DIR / "locale",)
+
+# Asig settings
+ASIG_IDNP = env.str("ASIG_IDNP")

@@ -32,7 +32,6 @@ ENV PATH="/usr/app/.venv/bin:$PATH"
 COPY ./apps /usr/app/apps
 COPY ./config /usr/app/config
 COPY ./locale /usr/app/locale
-COPY ./templates /usr/app/templates
 COPY ./manage.py /usr/app
 COPY ./gunicorn.conf.py /usr/app
 COPY .env /usr/app
