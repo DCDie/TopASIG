@@ -12,20 +12,24 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+import environ
 from django.utils.translation import gettext_lazy as _
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Initialize environment variables
+env = environ.Env(SECRET_KEY=(str, "(╯▔皿▔)╯"), DEBUG=(bool, False))
+
+SECRET_KEY = env.str("SECRET_KEY")
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Attempt to read .env file, but do not fail if it does not exist
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-1uah49sq72u+69t7r9bo94coh3g6zb5$1adlq&57jad2_cyj+d"
+ENV_FILE = BASE_DIR / ".env"
+if ENV_FILE.exists():
+    environ.Env.read_env(ENV_FILE.as_posix())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DEBUG")
 
 ALLOWED_HOSTS = []
 
@@ -101,8 +105,13 @@ CORS_ALLOW_HEADERS = (
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": env.str("SQL_ENGINE", "django.db.backends.postgresql"),
+        "NAME": env.str("SQL_NAME"),
+        "USER": env.str("SQL_USER"),
+        "PASSWORD": env.str("SQL_PASSWORD"),
+        "HOST": env.str("SQL_HOST"),
+        "PORT": env.int("SQL_PORT", 5432),
+        "CONN_MAX_AGE": env.int("SQL_CONN_MAX_AGE", 600),
     }
 }
 
@@ -164,6 +173,7 @@ REST_FRAMEWORK = {
         "rest_framework.filters.BaseFilterBackend",
         "rest_framework.filters.SearchFilter",
     ),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
 }
 
 
