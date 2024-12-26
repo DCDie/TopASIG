@@ -12,17 +12,21 @@ class RcaExportServiceClient:
         self.service = self.client.service
         self.security_token = None
 
-    def authenticate(self, username=settings.RCA_USERNAME, password=settings.RCA_PASSWORD):
+    def authenticate(self, username: str = settings.RCA_USERNAME, password: str = settings.RCA_PASSWORD):
         """
-        Calls the Authenticate method with given credentials.
+        Authenticates a user by using provided credentials and retrieves a security token.
+
+        This method initiates a user authentication process by calling the Authenticate
+        operation in a specified service. The operation is supplied with a username
+        and password, which are used to validate the user. Upon successful validation,
+        a GUID is returned and stored as the session token.
 
         Parameters:
-            security_token (str): A GUID or some token as per the WSDL requirement.
-            username (str): Username for the service (if required).
-            password (str): Password for the service (if required).
+            username (str): The username for authentication. Defaults to settings.RCA_USERNAME.
+            password (str): The password for authentication. Defaults to settings.RCA_PASSWORD.
 
-        After calling this method, the class instance should store the security_token
-        returned by the service (if any), for subsequent calls.
+        Returns:
+            Any: The response from the Authenticate operation containing the authentication result.
         """
 
         author_type = self.client.get_type("ns0:AuthorizationInfo")
@@ -35,43 +39,62 @@ class RcaExportServiceClient:
         self.security_token = response.AuthenticateResult
         return response
 
-    def check_access(self, login, password):
+    def check_access(self, login: str = settings.RCA_USERNAME, password: str = settings.RCA_PASSWORD):
         """
-        Calls the CheckAccess method.
+        Checks if the user has access by verifying the provided login credentials.
 
-        Parameters:
-            login (str)
-            password (str)
+        This method communicates with an external service to validate the provided
+        login and password combination. The result is returned as a response object
+        from the service, indicating whether access is granted or denied.
 
-        Returns the response from the service.
+        Args:
+            login: str. The login credential for the user.
+            password: str. The password credential for the user.
+
+        Returns:
+            The response object from the service indicating the result of the
+            authentication process.
+
         """
         response = self.service.CheckAccess(login=login, password=password)
         return response
 
-    def calculate_rca(
-        self,
-        OperatingModes: str,
-        PersonIsJuridical: bool,
-        Territory: str,
-        IDNX: str,
-        VehicleRegistrationCertificateNumber: str,
-        IDNP: str = settings.ASIG_IDNP
-    ):
+    def calculate_rca(self, request_obj: dict):
         """
-        Calls CalculateRCAIPremium. Calculates the RCA cost for a given set of input parameters.
+        Calculates the RCA insurance premium based on the provided employee and
+        request details. This method prepares the necessary request object using
+        provided employee information and request parameters, authenticates the
+        current session, and interacts with the API service to retrieve the RCA
+        insurance premium.
 
-        You may supply employee IDNP if needed. If so, construct Employee object.
+        Parameters
+        ----------
+        request_obj : dict
+            A dictionary containing parameters necessary for calculating RCA
+            insurance premiums. The dictionary includes keys matching the
+            request's expected input structure.
+
+        Returns
+        -------
+        object
+            The response object returned by the RCA insurance premium API
+            service. Contains details of the calculation results.
+
+        Raises
+        ------
+        APIException
+            Raised when there is an error while interacting with the API service,
+            providing details of the exception.
+        ValidationError
+            Raised if the response from the API service indicates failure,
+            including an error message returned by the service.
         """
-        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
+        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=settings.ASIG_IDNP)
 
         RequestType = self.client.get_type("ns0:CalculateRCAIPremiumRequest")
         request_obj = RequestType(
             Employee=Employee,
-            OperatingModes=OperatingModes,
-            PersonIsJuridical=PersonIsJuridical,
-            IDNX=IDNX,
-            VehicleRegistrationCertificateNumber=VehicleRegistrationCertificateNumber,
-            Territory=Territory,
+            **request_obj,
         )
         try:
             self.authenticate()
@@ -82,33 +105,33 @@ class RcaExportServiceClient:
             raise ValidationError(detail={"detail": response.ErrorMessage})
         return response
 
-    def calculate_green_card(
-        self,
-        GreenCardZone: str,
-        TermInsurance: str,
-        IDNX: str,
-        VehicleRegistrationCertificateNumber: str,
-        IDNP: str = settings.ASIG_IDNP,
-    ):
+    def calculate_green_card(self, request_obj: dict):
         """
-        Calls CalculateRCAEPremium. Calculates the Green Card cost for a given set of input parameters.
+        Calculates the green card premium based on the provided request object.
 
-        Parameters:
-            GreenCardZone (str): GreenCardZone enum value.
-            TermInsurance (str): TermInsurance enum value.
-            IDNX (str): IDNP or IDNO.
-            VehicleRegistrationCertificateNumber (str): Vehicle Registration Certificate Number.
-            IDNP (str): Employee IDNP.
+        The method interacts with a remote service, initializing required parameters
+        from predefined client types. It handles authentication, performs the
+        service call, and manages potential exceptions or errors during the
+        communication process. On successful execution, returns the response
+        object from the external service.
+
+        Arguments:
+            request_obj (dict): A dictionary containing parameters required
+            for the service request.
+
+        Raises:
+            APIException: If any exception occurs during the external service call.
+            ValidationError: If the response indicates an error or unsuccessful operation.
+
+        Returns:
+            Response object from the external service call.
         """
-        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
+        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=settings.ASIG_IDNP)
 
         RequestType = self.client.get_type("ns0:CalculateRCAEPremiumRequest")
         request_obj = RequestType(
             Employee=Employee,
-            GreenCardZone=GreenCardZone,
-            IDNX=IDNX,
-            VehicleRegistrationCertificateNumber=VehicleRegistrationCertificateNumber,
-            TermInsurance=TermInsurance,
+            **request_obj,
         )
         try:
             self.authenticate()
@@ -119,16 +142,118 @@ class RcaExportServiceClient:
             raise ValidationError(detail={"detail": response.ErrorMessage})
         return response
 
-    def get_file(self, document_id, document_type, contract_type):
+    def save_greencard_document(self, document_request: dict, IDNP: str = settings.ASIG_IDNP):
         """
-        Calls GetFile method.
+        Saves a green card document by sending a request to the corresponding service.
 
-        document_type and contract_type must match the enumerations specified by WSDL.
+        This function is used to authenticate and send a green card document request to
+        an external service. It first constructs the required request payload using the
+        received input, authenticates with the service, and sends the data. The function
+        handles errors such as those raised by the external service or issues during
+        authentication. It ensures that the server response indicates a successful
+        operation; otherwise, raises appropriate validation errors.
+
+        Args:
+            document_request (dict): A dictionary containing the details of the green
+                card document to be saved. Must include required keys and values as
+                expected by the external service API.
+            IDNP (str): The unique personal identifier. Defaults to ASIG_IDNP from
+                settings.
+
+        Raises:
+            APIException: Raised when an error occurs during communication with the
+                external service.
+            ValidationError: Raised when the service response indicates a failure,
+                including explaining errors.
+
+        Returns:
+            Response object: A representation of the result of the save operation
+                returned by the external service.
+        """
+        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
+        RequestType = self.client.get_type("ns0:GreenCardDocumentModel")
+        document_request["Employee"] = Employee
+        document_request = RequestType(**document_request)
+
+        try:
+            self.authenticate()
+            response = self.service.SaveGreenCardDocument(SecurityToken=self.security_token, request=document_request)
+        except Exception as e:  # noqa: BLE001
+            raise APIException(detail={"detail": str(e)}) from e
+        if response.Success is False:
+            raise ValidationError(detail={"detail": response.Errors.string})
+        return response
+
+    def save_rca_document(self, document_request: dict, IDNP: str = settings.ASIG_IDNP):
+        """
+        Saves an RCA document to the external service using the provided document
+        request details and optional IDNP.
+
+        This method authenticates the client before attempting to save the document
+        using the external service. It converts the input request into the appropriate
+        type expected by the service, ensuring that the Employee data is included in
+        the request payload.
+
+        Raises `APIException` if an exception occurs during the process of
+        authentication or saving the document.
+
+        Raises `ValidationError` if the external service response indicates a failure.
+
+        Parameters:
+            document_request (dict): The dictionary containing document details that are
+                to be sent to the external service.
+            IDNP (str, optional): The unique identifier for an employee. Defaults to a
+                predefined setting value.
+
+        Returns:
+            The response object from the external service containing the result of the
+            save operation.
+        """
+        Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
+        RequestType = self.client.get_type("ns0:RcaDocumentModel")
+        document_request["Employee"] = Employee
+        document_request = RequestType(**document_request)
+
+        try:
+            self.authenticate()
+            response = self.service.SaveRcaDocument(SecurityToken=self.security_token, request=document_request)
+        except Exception as e:  # noqa: BLE001
+            raise APIException(detail={"detail": str(e)}) from e
+        if response.Success is False:
+            raise ValidationError(detail={"detail": response.Errors.string})
+        return response
+
+    def get_file(self, DocumentId: str, DocumentType: str, ContractType: str):
+        """
+        Fetches a file based on provided document details.
+
+        This method sends a request to retrieve a file using the supplied DocumentId,
+        DocumentType, and ContractType. It constructs the necessary request object
+        and communicates with the service to fetch the file.
+
+        Parameters:
+            DocumentId: str
+                Unique identifier of the document to be retrieved.
+            DocumentType: str
+                Type of the document being requested.
+            ContractType: str
+                Specifies the contract type associated with the document.
+
+        Returns:
+            object
+                The requested file object obtained from the service.
         """
         FileRequestType = self.client.get_type("ns0:GetFileRequest")
-        file_request = FileRequestType(DocumentId=document_id, DocumentType=document_type, ContractType=contract_type)
+        file_request = FileRequestType(DocumentId=DocumentId, DocumentType=DocumentType, ContractType=ContractType)
 
-        return self.service.GetFile(SecurityToken=self.security_token, fileRequest=file_request)
+        try:
+            self.authenticate()
+            response = self.service.GetFile(SecurityToken=self.security_token, fileRequest=file_request)
+        except Exception as e:  # noqa: BLE001
+            raise APIException(detail={"detail": str(e)}) from e
+        if response.IsSuccess is False:
+            raise ValidationError(detail={"detail": response.ErrorMessage})
+        return response
 
     def get_rca_documents_list(self, start_date, end_date):
         """
@@ -207,22 +332,6 @@ class RcaExportServiceClient:
         return self.service.GetGreenCardCompensationDocumentByKey(
             SecurityToken=self.security_token, GreenCardCompensationId=green_card_compensation_id
         )
-
-    def save_rca_document(self, document_request):
-        """
-        Calls SaveRcaDocument.
-
-        document_request should be constructed according to the ns0:RcaDocumentModel.
-        """
-        return self.service.SaveRcaDocument(SecurityToken=self.security_token, request=document_request)
-
-    def save_greencard_document(self, document_request):
-        """
-        Calls SaveGreenCardDocument.
-
-        document_request should be constructed according to the ns0:GreenCardDocumentModel.
-        """
-        return self.service.SaveGreenCardDocument(SecurityToken=self.security_token, request=document_request)
 
     def save_rca_compensation(self, compensation_record):
         """

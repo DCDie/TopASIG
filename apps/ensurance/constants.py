@@ -51,3 +51,33 @@ class OperationModes(models.TextChoices):
     INTERCITYBUS = "3", _("IntercityBus")
     TAXI = "4", _("Taxi")
     RENTACAR = "5", _("RentACar")
+
+
+class OperationModesStrings(models.TextChoices):
+    USUAL = "Usual", _("Usual")
+    MINIBUS = "Minibus", _("Minibus")
+    INTERCITYBUS = "IntercityBus", _("IntercityBus")
+    TAXI = "Taxi", _("Taxi")
+    RENTACAR = "RentACar", _("RentACar")
+
+
+class PaymentModes(models.TextChoices):
+    CASH = "Cash", _("Cash")
+    TRANSFER = "Transfer", _("Transfer")
+
+
+class PossessionBase(models.TextChoices):
+    PROPERTY = "Property", _("Property")
+    LEASE = "Lease", _("Lease")
+    LEASING = "Leasing", _("Leasing")
+    POWER_OF_ATTORNEY = "PowerOfAttorney", _("Power of Attorney")
+
+
+class DocumentType(models.TextChoices):
+    CONTRACT = "Contract", _("Contract")
+    DEMAND = "Demand", _("Demand")
+    INSURANCE_POLICY = "InsurancePolicy", _("Insurance Policy")
+
+class ContractType(models.TextChoices):
+    RCAI = "RCAI", _("RCAI")
+    CV = "CV", _("CV")
