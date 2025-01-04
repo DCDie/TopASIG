@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     # Internal apps
     "apps.ensurance",
     "apps.common",
+    "apps.payment",
 ]
 
 MIDDLEWARE = [
