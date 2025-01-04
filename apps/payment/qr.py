@@ -7,13 +7,32 @@ from rest_framework.exceptions import AuthenticationFailed, ValidationError
 
 class QrCodeService:
     """
-    Service to interact with IPS Business WebApi for QR Code operations.
+    Manages interactions with the Victoria API for creating, managing, and retrieving information
+    on payee-presented QR codes.
+
+    This class provides methods for authenticating with the API, generating and managing
+    QR codes, as well as retrieving their statuses. It handles authentication token management
+    and automatically refreshes the token if it has expired.
+
+    :ivar base_url: Base URL of the Victoria API.
+    :type base_url: str
+    :ivar username: Username for API authentication.
+    :type username: str
+    :ivar password: Password for API authentication.
+    :type password: str
+    :ivar domain: Domain used for authentication requests.
+    :type domain: str
+    :ivar token: JWT token used for authenticated requests.
+    :type token: Optional[str]
+    :ivar token_expires_at: Datetime when the current token will expire.
+    :type token_expires_at: datetime
     """
 
     def __init__(self):
-        self.base_url = settings.IPS_API_BASE_URL.rstrip("/")
-        self.client_id = settings.IPS_API_CLIENT_ID
-        self.client_secret = settings.IPS_API_CLIENT_SECRET
+        self.base_url = settings.VICTORIA_BASE_URL.rstrip("/")
+        self.username = settings.VICTORIA_USERNAME
+        self.password = settings.VICTORIA_PASSWORD
+        self.domain = settings.DOMAIN
         self.token = None
         self.token_expires_at = datetime.utcnow()
 
@@ -24,8 +43,9 @@ class QrCodeService:
         url = f"{self.base_url}/identity/adtoken"
         payload = {
             "grant_type": "password",
-            "username": self.client_id,
-            "password": self.client_secret,
+            "username": self.username,
+            "password": self.password,
+            "domain": self.domain,
         }
         try:
             response = requests.post(url, data=payload)
@@ -45,17 +65,21 @@ class QrCodeService:
             self.authenticate()
         return {"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"}
 
-    def create_qr_code(self, vb_payee_qr_dto):
+    def create_qr_code(self, vb_payee_qr_dto, width=300, height=300):
         """
         Create a new payee-presented QR code.
 
         :param vb_payee_qr_dto: Dict representing VbPayeeQrDto schema
+        :param width: Width of the QR code in pixels
+        :param height: Height of the QR code in pixels
         :return: Dict representing CreatePayeeQrResponse
         """
         url = f"{self.base_url}/api/v1/qr"
         headers = self.get_headers()
         try:
-            response = requests.post(url, json=vb_payee_qr_dto, headers=headers)
+            response = requests.post(
+                url, json=vb_payee_qr_dto, headers=headers, params={"width": width, "height": height}
+            )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:

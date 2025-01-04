@@ -67,3 +67,8 @@ class GetQrStatusResponseSerializer(serializers.Serializer):
     statusDtTm = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ")  # noqa: N815
     lockTtl = TtlDtoSerializer()  # noqa: N815
     extensions = VbPayeeQrExtensionResponseSerializer(many=True)
+
+
+class SizeSerializer(serializers.Serializer):
+    width = serializers.IntegerField(min_value=0, default=300)
+    height = serializers.IntegerField(min_value=0, default=300)

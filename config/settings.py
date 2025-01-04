@@ -30,6 +30,7 @@ if ENV_FILE.exists():
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG")
+DOMAIN = env.str("DOMAIN", default="https://topasig.md")
 
 ALLOWED_HOSTS = []
 
@@ -203,3 +204,8 @@ LOCALE_PATHS = (BASE_DIR / "locale",)
 
 # Asig settings
 ASIG_IDNP = env.str("ASIG_IDNP")
+
+# Victoria settings
+VICTORIA_BASE_URL = env.str("VICTORIA_BASE_URL")
+VICTORIA_USERNAME = env.str("VICTORIA_USERNAME")
+VICTORIA_PASSWORD = env.str("VICTORIA_PASSWORD")
