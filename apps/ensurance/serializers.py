@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 from apps.ensurance.constants import (
+    ContractType,
+    DocumentType,
     GreenCardVehicleCategories,
     GreenCardZones,
     OperationModes,
@@ -8,8 +10,10 @@ from apps.ensurance.constants import (
     PaymentModes,
     PossessionBase,
     TermInsurance,
-    Territories, DocumentType, ContractType,
+    Territories,
 )
+from apps.payment.constants import StatusChoices
+from apps.payment.models import QrCode
 
 
 class CalculateRCAInputSerializer(serializers.Serializer):
@@ -149,10 +153,22 @@ class BaseDocumentModelSerializer(serializers.Serializer):
 
 class RcaDocumentModelSerializer(BaseDocumentModelSerializer):
     OperatingMode = serializers.ChoiceField(choices=OperationModesStrings.choices)
+    QRCode = serializers.PrimaryKeyRelatedField(
+        required=True,
+        allow_null=False,
+        help_text="QR Code ID",
+        queryset=QrCode.objects.filter(status=StatusChoices.PAID),
+    )
 
 
 class GreenCardDocumentModelSerializer(BaseDocumentModelSerializer):
     GreenCardZone = serializers.ChoiceField(choices=GreenCardZones.choices)
+    QRCode = serializers.PrimaryKeyRelatedField(
+        required=True,
+        allow_null=False,
+        help_text="QR Code ID",
+        queryset=QrCode.objects.filter(status=StatusChoices.PAID),
+    )
 
 
 class GetFileRequestSerializer(serializers.Serializer):
