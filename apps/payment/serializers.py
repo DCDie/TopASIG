@@ -8,8 +8,8 @@ class VbPayeeQrHeaderDtoSerializer(serializers.Serializer):
 
 
 class MoneyDtoSerializer(serializers.Serializer):
-    sum = serializers.FloatField()
-    currency = serializers.CharField(max_length=10, allow_blank=True, required=False)
+    sum = serializers.FloatField(min_value=0)
+    currency = serializers.CharField(max_length=10, allow_blank=True, required=False, default="MDL")
 
 
 class PayeeAccountDtoSerializer(serializers.Serializer):
@@ -17,15 +17,15 @@ class PayeeAccountDtoSerializer(serializers.Serializer):
 
 
 class TtlDtoSerializer(serializers.Serializer):
-    length = serializers.IntegerField()
-    units = serializers.ChoiceField(choices=["ss", "mm"], allow_blank=True, required=False)
+    length = serializers.IntegerField(default=5, min_value=1)
+    units = serializers.ChoiceField(choices=["ss", "mm"], allow_blank=True, required=False, default="mm")
 
 
 class VbPayeeQrExtensionDtoSerializer(serializers.Serializer):
     creditorAccount = PayeeAccountDtoSerializer()  # noqa: N815
     amount = MoneyDtoSerializer()
-    amountMin = MoneyDtoSerializer()  # noqa: N815
-    amountMax = MoneyDtoSerializer()  # noqa: N815
+    amountMin = MoneyDtoSerializer(required=False)  # noqa: N815
+    amountMax = MoneyDtoSerializer(required=False)  # noqa: N815x
     dba = serializers.CharField(max_length=25, min_length=2, allow_blank=True, required=False)
     remittanceInfo4Payer = serializers.CharField(max_length=35, min_length=2, allow_blank=True, required=False)  # noqa: N815
     creditorRef = serializers.CharField(max_length=35, min_length=2, allow_blank=True, required=False)  # noqa: N815
