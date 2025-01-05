@@ -10,8 +10,10 @@ from apps.ensurance.serializers import (
     CalculateGreenCardInputSerializer,
     CalculateGreenCardOutputSerializer,
     CalculateRCAInputSerializer,
-    CalculateRCAOutputSerializer, GreenCardDocumentModelSerializer, RcaDocumentModelSerializer,
+    CalculateRCAOutputSerializer,
     GetFileRequestSerializer,
+    GreenCardDocumentModelSerializer,
+    RcaDocumentModelSerializer,
 )
 
 
@@ -29,8 +31,10 @@ class RcaViewSet(GenericViewSet):
         permission_classes (list): List of permission classes used to control access to these actions.
         authentication_classes (list): List of authentication classes used for these actions.
     """
+
     permission_classes = []
     authentication_classes = []
+    serializer_class = Serializer
 
     @extend_schema(responses={200: CalculateRCAOutputSerializer})
     @action(
@@ -69,7 +73,6 @@ class RcaViewSet(GenericViewSet):
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
-
     @extend_schema(responses={200: Serializer})
     @action(
         detail=False,
@@ -79,23 +82,23 @@ class RcaViewSet(GenericViewSet):
     )
     def save_rca(self, request):
         """
-            save_rca(request)
+        save_rca(request)
 
-            Handles the saving of RCA document by performing
-            input validation and invoking a SOAP service call to save the document.
+        Handles the saving of RCA document by performing
+        input validation and invoking a SOAP service call to save the document.
 
-            Parameters:
-            request : HttpRequest
-                The HTTP request object containing data for the RCA document.
+        Parameters:
+        request : HttpRequest
+            The HTTP request object containing data for the RCA document.
 
-            Returns:
-            Response
-                A Response object with an empty body and HTTP 200 status code if the
-                operation is successful.
+        Returns:
+        Response
+            A Response object with an empty body and HTTP 200 status code if the
+            operation is successful.
 
-            Raises:
-            ValidationError
-                If the input data is invalid according to the serializer.
+        Raises:
+        ValidationError
+            If the input data is invalid according to the serializer.
         """
         # Validate input data
         serializer = self.get_serializer(data=request.data)
@@ -186,20 +189,20 @@ class RcaViewSet(GenericViewSet):
     )
     def calculate_medical_insurance(self, request):
         """
-            Calculate the estimated cost of medical insurance based on input data.
+        Calculate the estimated cost of medical insurance based on input data.
 
-            This endpoint validates the input data through the associated serializer.
-            Upon successful validation, it processes the data and performs specific
-            logic to compute the estimated medical insurance cost. The computed result
-            is returned as part of the HTTP response.
+        This endpoint validates the input data through the associated serializer.
+        Upon successful validation, it processes the data and performs specific
+        logic to compute the estimated medical insurance cost. The computed result
+        is returned as part of the HTTP response.
 
-            Arguments:
-                request: REST framework's Request instance containing input data
-                    for calculating medical insurance.
+        Arguments:
+            request: REST framework's Request instance containing input data
+                for calculating medical insurance.
 
-            Returns:
-                Response containing the result of the medical insurance calculation
-                along with an appropriate HTTP status code.
+        Returns:
+            Response containing the result of the medical insurance calculation
+            along with an appropriate HTTP status code.
         """
         # Validate input data
         serializer = self.get_serializer(data=request.data)

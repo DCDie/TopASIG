@@ -17,6 +17,27 @@ from apps.payment.serializers import (
 
 
 class QrCodeViewSet(GenericViewSet):
+    """
+    A Django ViewSet for creating and managing QR codes.
+
+    This class provides functionality for creating QR codes and retrieving their
+    status. It integrates with serializers to validate incoming data and sends
+    requests to external services for QR code generation and status updates.
+
+    :ivar serializer_class: The serializer class used to validate and process
+        incoming requests.
+    :type serializer_class: type
+    :ivar queryset: The queryset to retrieve QR code objects from the database.
+    :type queryset: type
+    :ivar lookup_field: Field used to look up objects in the queryset.
+    :type lookup_field: str
+    :ivar permission_classes: List of permission classes that determine access
+        control to the viewset.
+    :type permission_classes: list
+    :ivar authentication_classes: List of authentication classes used for
+        verifying requests.
+    :type authentication_classes: list
+    """
     serializer_class = VbPayeeQrDtoSerializer
     queryset = QrCode.objects.all()
     lookup_field = "uuid"
@@ -44,6 +65,26 @@ class QrCodeViewSet(GenericViewSet):
         ],
     )
     def create(self, request):
+        """
+        Handles the creation of QR codes for payees based on the provided request data
+        and optional query parameters (width and height). Validates the input data
+        using serializers, invokes the QR code service, and returns the generated QR
+        code or an appropriate error response.
+
+        :param request: HTTP request object containing necessary data in the body for
+            QR code creation. Accepts optional query parameters ``width`` and
+            ``height`` to specify QR code dimensions.
+        :type request: HttpRequest
+
+        :return: HTTP response object with serialized QR code data on success or an
+            error message with status code on failure.
+        :rtype: Response
+
+        :raises ValidationError: If the input data or query parameters are
+            invalid after serializer validation.
+        :raises HTTPError: If there is a server-side issue while handling the QR code
+            generation.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -68,6 +109,19 @@ class QrCodeViewSet(GenericViewSet):
     @extend_schema(responses=GetQrStatusResponseSerializer)
     @action(detail=True, methods=["get"], url_path="status")
     def get_status(self, request, pk=None):
+        """
+        Handles the retrieval of status information for a specific QR code by interacting
+        with an external API service. Updates the QR code status in the database if the
+        API call is successful and returns the status data. Handles potential errors
+        emerging from the API call.
+
+        :param request: The HTTP request object.
+        :type request: rest_framework.request.Request
+        :param pk: The primary key of the QR code object to retrieve its status.
+        :type pk: str or None
+        :return: A Response object containing the QR code status or an error message.
+        :rtype: rest_framework.response.Response
+        """
         qr_code = self.get_object()
         # Request the API to get the status of the QR code
         qrcode_service = QrCodeService()

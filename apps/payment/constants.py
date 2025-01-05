@@ -27,3 +27,8 @@ class StatusChoices(models.TextChoices):
     CANCELLED = "Cancelled", "Cancelled"
     REPLACED = "Replaced", "Replaced"
     INACTIVE = "Inactive", "Inactive"
+
+
+class UnitsChoices(models.TextChoices):
+    MM = "mm", "Minutes"
+    SS = "ss", "Seconds"

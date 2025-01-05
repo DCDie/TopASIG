@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
+from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeChoices, StatusChoices, UnitsChoices
+
 
 class VbPayeeQrHeaderDtoSerializer(serializers.Serializer):
-    qrType = serializers.ChoiceField(choices=["DYNM", "STAT", "HYBR"])  # noqa: N815
-    amountType = serializers.ChoiceField(choices=["Fixed", "Controlled", "Free"])  # noqa: N815
-    pmtContext = serializers.ChoiceField(choices=["m", "e", "i", "0"], allow_blank=True, required=False)  # noqa: N815
+    qrType = serializers.ChoiceField(choices=QrTypeChoices.choices)  # noqa: N815
+    amountType = serializers.ChoiceField(choices=AmountTypeChoices.choices)  # noqa: N815
+    pmtContext = serializers.ChoiceField(choices=PmtContextChoices.choices, allow_blank=True, required=False)  # noqa: N815
 
 
 class MoneyDtoSerializer(serializers.Serializer):
@@ -18,7 +20,9 @@ class PayeeAccountDtoSerializer(serializers.Serializer):
 
 class TtlDtoSerializer(serializers.Serializer):
     length = serializers.IntegerField(default=5, min_value=1)
-    units = serializers.ChoiceField(choices=["ss", "mm"], allow_blank=True, required=False, default="mm")
+    units = serializers.ChoiceField(
+        choices=UnitsChoices.choices, allow_blank=True, required=False, default=UnitsChoices.MM
+    )
 
 
 class VbPayeeQrExtensionDtoSerializer(serializers.Serializer):
@@ -42,7 +46,7 @@ class CreatePayeeQrResponseSerializer(serializers.Serializer):
     qrExtensionUUID = serializers.UUIDField(required=False)  # noqa: N815
     qrAsText = serializers.CharField(required=False)  # noqa: N815
     qrAsImage = serializers.CharField(required=False)  # noqa: N815
-    status = serializers.ChoiceField(choices=["Active", "Paid", "Expired", "Cancelled", "Replaced", "Inactive"])
+    status = serializers.ChoiceField(choices=StatusChoices.choices)
 
 
 class PaymentDtoSerializer(serializers.Serializer):
@@ -54,7 +58,7 @@ class PaymentDtoSerializer(serializers.Serializer):
 class VbPayeeQrExtensionResponseSerializer(serializers.Serializer):
     uuid = serializers.UUIDField()
     isLast = serializers.BooleanField()  # noqa: N815
-    status = serializers.ChoiceField(choices=["Active", "Paid", "Expired", "Cancelled", "Replaced", "Inactive"])
+    status = serializers.ChoiceField(choices=StatusChoices.choices)
     statusDtTm = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ")  # noqa: N815
     isHeaderLocked = serializers.BooleanField()  # noqa: N815
     ttl = TtlDtoSerializer()
@@ -62,8 +66,8 @@ class VbPayeeQrExtensionResponseSerializer(serializers.Serializer):
 
 
 class GetQrStatusResponseSerializer(serializers.Serializer):
-    uuid = serializers.UUIDField()  # noqa: N815
-    status = serializers.ChoiceField(choices=["Active", "Paid", "Expired", "Cancelled", "Replaced", "Inactive"])
+    uuid = serializers.UUIDField()
+    status = serializers.ChoiceField(choices=StatusChoices.choices)
     statusDtTm = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ")  # noqa: N815
     lockTtl = TtlDtoSerializer()  # noqa: N815
     extensions = VbPayeeQrExtensionResponseSerializer(many=True)
