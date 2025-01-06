@@ -24,7 +24,7 @@ class QrCode(models.Model):
         max_length=1, choices=PmtContextChoices.choices, blank=True, null=True, help_text="Payment context"
     )
     qr_as_text = models.TextField(blank=True, null=True, help_text="QR code represented as text")
-    qr_as_image = models.ImageField(upload_to="qr_codes/", blank=True, null=True, help_text="QR code image")
+    qr_as_image = models.TextField(blank=True, null=True, help_text="QR code represented as an image")
     status = models.CharField(
         max_length=10,
         choices=StatusChoices.choices,

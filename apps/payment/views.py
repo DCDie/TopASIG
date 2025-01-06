@@ -3,6 +3,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from requests import HTTPError
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -38,9 +39,9 @@ class QrCodeViewSet(GenericViewSet):
         verifying requests.
     :type authentication_classes: list
     """
+
     serializer_class = VbPayeeQrDtoSerializer
     queryset = QrCode.objects.all()
-    lookup_field = "uuid"
     permission_classes = []
     authentication_classes = []
 
@@ -94,17 +95,22 @@ class QrCodeViewSet(GenericViewSet):
         query_serializer.is_valid(raise_exception=True)
 
         qrcode_service = QrCodeService()
-        try:
-            response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)
-            response_serializer = CreatePayeeQrResponseSerializer(data=response_data)
-            if response_serializer.is_valid():
-                return Response(response_serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response(
-                    {"error": "Invalid response data from API."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        except HTTPError as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)
+
+        # Create the QR code and return the response
+        instance = QrCode.objects.create(
+            uuid=response_data.get("qrHeaderUUID"),
+            qr_type=validated_data.get("header").get("qrType"),
+            pmt_context=validated_data.get("header").get("pmtContext"),
+            qr_as_text=response_data.get("qrAsText"),
+            qr_as_image=response_data.get("qrAsImage"),
+            status="ACTIVE",
+        )
+        response_data["qrCode"] = instance.pk
+
+        response_serializer = CreatePayeeQrResponseSerializer(data=response_data)
+        response_serializer.is_valid(raise_exception=True)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(responses=GetQrStatusResponseSerializer)
     @action(detail=True, methods=["get"], url_path="status")
@@ -122,7 +128,7 @@ class QrCodeViewSet(GenericViewSet):
         :return: A Response object containing the QR code status or an error message.
         :rtype: rest_framework.response.Response
         """
-        qr_code = self.get_object()
+        qr_code = get_object_or_404(QrCode, uuid=pk)
         # Request the API to get the status of the QR code
         qrcode_service = QrCodeService()
         try:

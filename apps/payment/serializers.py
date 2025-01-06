@@ -44,10 +44,9 @@ class VbPayeeQrDtoSerializer(serializers.Serializer):
 class CreatePayeeQrResponseSerializer(serializers.Serializer):
     qrHeaderUUID = serializers.UUIDField(required=False)  # noqa: N815
     qrExtensionUUID = serializers.UUIDField(required=False)  # noqa: N815
-    qrAsText = serializers.CharField(required=False)  # noqa: N815
+    qrAsText = serializers.URLField(required=False)  # noqa: N815
     qrAsImage = serializers.CharField(required=False)  # noqa: N815
-    status = serializers.ChoiceField(choices=StatusChoices.choices)
-
+    qrCode = serializers.IntegerField(required=False)
 
 class PaymentDtoSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=256, allow_blank=True, required=False)
