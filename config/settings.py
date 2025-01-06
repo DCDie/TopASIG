@@ -205,6 +205,7 @@ LOCALE_PATHS = (BASE_DIR / "locale",)
 
 # Asig settings
 ASIG_IDNP = env.str("ASIG_IDNP")
+ASIG_IBAN = env.str("ASIG_IBAN")
 
 # Victoria settings
 VICTORIA_BASE_URL = env.str("VICTORIA_BASE_URL")

@@ -57,6 +57,7 @@ class QrCodeViewSet(GenericViewSet):
                 location=OpenApiParameter.QUERY,
                 required=False,
                 description="Width of the QR code in pixels. Defaults to 300.",
+                default=300,
             ),
             OpenApiParameter(
                 name="height",
@@ -64,6 +65,7 @@ class QrCodeViewSet(GenericViewSet):
                 location=OpenApiParameter.QUERY,
                 required=False,
                 description="Height of the QR code in pixels. Defaults to 300.",
+                default=300,
             ),
         ],
     )

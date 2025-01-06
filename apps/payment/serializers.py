@@ -26,14 +26,24 @@ class TtlDtoSerializer(serializers.Serializer):
 
 
 class VbPayeeQrExtensionDtoSerializer(serializers.Serializer):
-    creditorAccount = PayeeAccountDtoSerializer()  # noqa: N815
     amount = MoneyDtoSerializer()
-    amountMin = MoneyDtoSerializer(required=False)  # noqa: N815
-    amountMax = MoneyDtoSerializer(required=False)  # noqa: N815x
-    dba = serializers.CharField(max_length=25, min_length=2, allow_blank=True, required=False)
-    remittanceInfo4Payer = serializers.CharField(max_length=35, min_length=2, allow_blank=True, required=False)  # noqa: N815
-    creditorRef = serializers.CharField(max_length=35, min_length=2, allow_blank=True, required=False)  # noqa: N815
-    ttl = TtlDtoSerializer()
+    dba = serializers.CharField(
+        max_length=25,
+        min_length=2,
+        required=False,
+        help_text="Commercial name that will appear in client APP.",
+        default="TopAsig",
+    )
+    remittanceInfo4Payer = serializers.CharField(
+        max_length=35,
+        min_length=2,
+        required=False,
+        help_text="Payment destination.",
+        default="TopAsig",
+    )
+    creditorRef = serializers.CharField(
+        max_length=35, min_length=2, required=False, default="www.topasig.md", help_text="External payment reference."
+    )
 
 
 class VbPayeeQrDtoSerializer(serializers.Serializer):
@@ -47,6 +57,7 @@ class CreatePayeeQrResponseSerializer(serializers.Serializer):
     qrAsText = serializers.URLField(required=False)  # noqa: N815
     qrAsImage = serializers.CharField(required=False)  # noqa: N815
     qrCode = serializers.IntegerField(required=False)
+
 
 class PaymentDtoSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=256, allow_blank=True, required=False)

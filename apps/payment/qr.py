@@ -4,6 +4,8 @@ import requests
 from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 
+from apps.payment.constants import UnitsChoices
+
 
 class QrCodeService:
     """
@@ -75,6 +77,8 @@ class QrCodeService:
         """
         url = f"{self.base_url}/api/v1/qr"
         headers = self.get_headers()
+        vb_payee_qr_dto["extension"]["creditorAccount"] = {"iban": settings.ASIG_IBAN}
+        vb_payee_qr_dto["extension"]["ttl"] = {"length": 15, "units": UnitsChoices.MM}
         try:
             response = requests.post(
                 url, json=vb_payee_qr_dto, headers=headers, params={"width": width, "height": height}

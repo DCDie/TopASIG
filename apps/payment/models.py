@@ -32,6 +32,7 @@ class QrCode(models.Model):
         help_text="Current status of the QR Code",
         db_index=True,
     )
+    is_used = models.BooleanField(default=False, help_text="Whether the QR code has been used", db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
