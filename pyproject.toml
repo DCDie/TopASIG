@@ -18,6 +18,8 @@ django-environ = "^0.11.2"
 psycopg2-binary = "^2.9.10"
 pymupdf = "^1.25.1"
 pillow = "^11.1.0"
+celery = "^5.4.0"
+django-celery-results = "^2.5.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.3"

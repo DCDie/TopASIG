@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "drf_spectacular",
+    "django_celery_results",
     # Internal apps
     "apps.ensurance",
     "apps.common",
@@ -209,3 +210,28 @@ ASIG_IDNP = env.str("ASIG_IDNP")
 VICTORIA_BASE_URL = env.str("VICTORIA_BASE_URL")
 VICTORIA_USERNAME = env.str("VICTORIA_USERNAME")
 VICTORIA_PASSWORD = env.str("VICTORIA_PASSWORD")
+
+# Celery settings
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL")
+CELERY_CACHE_BACKEND = "default"
+CELERY_TIMEZONE = "Europe/Chisinau"
+
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 5 * 60  # 5 minutes
+CELERY_RESULT_EXTENDED = True
+CELERY_RESULT_EXPIRES = 7 * 24 * 60 * 60  # 1 week
+
+CELERYD_PREFETCH_MULTIPLIER = 1
+CELERY_ACKS_LATE = True
+
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_PRIORITY_DEFAULT = 1
+CELERY_RESULT_BACKEND = "django-db"
+
+CELERY_BEAT_SCHEDULE = {
+    "update_qr_status": {
+        "task": "apps.payment.tasks.update_qr_status",
+        "schedule": 10,  # every 10 seconds
+    },
+}

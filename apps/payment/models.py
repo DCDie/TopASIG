@@ -30,6 +30,7 @@ class QrCode(models.Model):
         choices=StatusChoices.choices,
         default=StatusChoices.ACTIVE,
         help_text="Current status of the QR Code",
+        db_index=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

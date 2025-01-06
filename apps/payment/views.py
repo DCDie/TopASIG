@@ -1,3 +1,4 @@
+from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from requests import HTTPError
@@ -7,6 +8,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from apps.payment.constants import StatusChoices
 from apps.payment.models import QrCode
 from apps.payment.qr import QrCodeService
 from apps.payment.serializers import (
@@ -104,7 +106,7 @@ class QrCodeViewSet(GenericViewSet):
             pmt_context=validated_data.get("header").get("pmtContext"),
             qr_as_text=response_data.get("qrAsText"),
             qr_as_image=response_data.get("qrAsImage"),
-            status="ACTIVE",
+            status=StatusChoices.ACTIVE,
         )
         response_data["qrCode"] = instance.pk
 
@@ -134,6 +136,8 @@ class QrCodeViewSet(GenericViewSet):
         try:
             response_data = qrcode_service.get_qr_status(qr_code.uuid)
             # Update the status of the QR code in the database
+            if settings.DEBUG:
+                response_data["status"] = qr_code.status
             qr_code.status = response_data.get("status")
             qr_code.save()
             return Response(response_data, status=status.HTTP_200_OK)
