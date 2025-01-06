@@ -40,19 +40,18 @@ class QrCodeService:
         """
         Authenticate with the API to obtain a JWT token.
         """
-        url = f"{self.base_url}/identity/adtoken"
+        url = f"{self.base_url}/identity/token"
         payload = {
             "grant_type": "password",
             "username": self.username,
             "password": self.password,
-            "domain": self.domain,
         }
         try:
             response = requests.post(url, data=payload)
             response.raise_for_status()
             data = response.json()
-            self.token = data.get("access_token")
-            expires_in = data.get("expires_in", 3600)  # Default to 1 hour
+            self.token = data.get("accessToken")
+            expires_in = data.get("expiresIn", 3600)  # Default to 1 hour
             self.token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
         except requests.exceptions.RequestException as e:
             raise AuthenticationFailed(f"Failed to authenticate with API: {e}") from e

@@ -9,7 +9,7 @@ COPY pyproject.toml poetry.lock /usr/app/
 
 RUN pip install poetry
 
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root --without dev
 
 FROM python:3.12-slim-bullseye
 
