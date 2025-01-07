@@ -1,5 +1,4 @@
 from celery import shared_task
-from django.conf import settings
 from django.db import transaction
 
 from apps.payment.constants import StatusChoices
@@ -14,6 +13,7 @@ def update_qr_status():
     data = {
         "updated": [],
         "failed": [],
+        "not_changed": [],
     }
 
     for qr in queryset:
@@ -22,11 +22,13 @@ def update_qr_status():
             with transaction.atomic():
                 response_data = qrcode_service.get_qr_status(qr.uuid)
                 # Update the status of the QR code in the database
-                qr.status = response_data.get("status")
-                if settings.DEBUG:
-                    qr.status = StatusChoices.PAID
-                qr.save()
-                data["updated"].append(qr.pk)
+                status = response_data.get("status")
+                if status and status != qr.status:
+                    qr.status = status
+                    qr.save()
+                    data["updated"].append(qr.pk)
+                else:
+                    data["not_changed"].append(qr.pk)
         except Exception:  # noqa BLE001
             data["failed"].append(qr.pk)
 
