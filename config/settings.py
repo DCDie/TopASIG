@@ -32,7 +32,7 @@ if ENV_FILE.exists():
 DEBUG = env.bool("DEBUG")
 DOMAIN = env.str("DOMAIN", default="https://topasig.md")
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -101,6 +101,7 @@ CORS_ALLOW_HEADERS = (
     "token",
     "cache-control",
 )
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
