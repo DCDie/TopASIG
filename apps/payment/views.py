@@ -21,31 +21,21 @@ from apps.payment.serializers import (
 
 class QrCodeViewSet(GenericViewSet):
     """
-    A Django ViewSet for creating and managing QR codes.
+    A viewset for managing QR codes and their related operations.
 
-    This class provides functionality for creating QR codes and retrieving their
-    status. It integrates with serializers to validate incoming data and sends
-    requests to external services for QR code generation and status updates.
-
-    :ivar serializer_class: The serializer class used to validate and process
-        incoming requests.
-    :type serializer_class: type
-    :ivar queryset: The queryset to retrieve QR code objects from the database.
-    :type queryset: type
-    :ivar lookup_field: Field used to look up objects in the queryset.
-    :type lookup_field: str
-    :ivar permission_classes: List of permission classes that determine access
-        control to the viewset.
-    :type permission_classes: list
-    :ivar authentication_classes: List of authentication classes used for
-        verifying requests.
-    :type authentication_classes: list
+    This class provides two main functionalities: creating a new QR code and retrieving the
+    status of an existing QR code. It includes methods to handle the creation of QR codes
+    with specific dimensions based on user-provided inputs and query parameters, ensuring
+    that the correct validation is applied before storing the QR code information in the
+    database. It also enables the retrieval of the current status of a QR code by interfacing
+    with an external service and updating the local database with the received status data.
     """
 
     serializer_class = VbPayeeQrDtoSerializer
     queryset = QrCode.objects.all()
     permission_classes = []
     authentication_classes = []
+    lookup_field = "uuid"
 
     @extend_schema(
         request=VbPayeeQrDtoSerializer,
@@ -71,24 +61,24 @@ class QrCodeViewSet(GenericViewSet):
     )
     def create(self, request):
         """
-        Handles the creation of QR codes for payees based on the provided request data
-        and optional query parameters (width and height). Validates the input data
-        using serializers, invokes the QR code service, and returns the generated QR
-        code or an appropriate error response.
+        Creates a QR code based on the provided data and query parameters. This endpoint processes
+        the incoming data, validates it, and generates a QR code both as text and an image. The
+        generated QR code data is then stored in the database and returned in the response.
 
-        :param request: HTTP request object containing necessary data in the body for
-            QR code creation. Accepts optional query parameters ``width`` and
-            ``height`` to specify QR code dimensions.
-        :type request: HttpRequest
+        Arguments:
+            self: The instance of the class.
+            request: The HTTP request object containing data and query parameters.
 
-        :return: HTTP response object with serialized QR code data on success or an
-            error message with status code on failure.
-        :rtype: Response
+        Parameters:
+            - width (int, optional): Width of the QR code in pixels. Defaults to 300.
+            - height (int, optional): Height of the QR code in pixels. Defaults to 300.
 
-        :raises ValidationError: If the input data or query parameters are
-            invalid after serializer validation.
-        :raises HTTPError: If there is a server-side issue while handling the QR code
-            generation.
+        Raises:
+            ValidationError: If input data or query parameters are invalid.
+
+        Returns:
+            dict: Serialized data representing the generated QR code including binary
+            data or metadata as applicable.
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -118,21 +108,29 @@ class QrCodeViewSet(GenericViewSet):
 
     @extend_schema(responses=GetQrStatusResponseSerializer)
     @action(detail=True, methods=["get"], url_path="status")
-    def get_status(self, request, pk=None):
+    def get_status(self, request, uuid: str):
         """
-        Handles the retrieval of status information for a specific QR code by interacting
-        with an external API service. Updates the QR code status in the database if the
-        API call is successful and returns the status data. Handles potential errors
-        emerging from the API call.
+        Handles the retrieval of the current status of a QR code.
 
-        :param request: The HTTP request object.
-        :type request: rest_framework.request.Request
-        :param pk: The primary key of the QR code object to retrieve its status.
-        :type pk: str or None
-        :return: A Response object containing the QR code status or an error message.
-        :rtype: rest_framework.response.Response
+        This method utilizes an external service to fetch the real-time status of
+        a QR code using its unique identifier (UUID). The status, once fetched,
+        is also updated in the local database record of the corresponding QR code.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object containing the context of
+                the request.
+            uuid (str): A unique identifier for the QR code whose status needs to be
+                fetched. This should correspond to a record in the local database.
+
+        Returns:
+            Response: An HTTP response object containing either the updated status
+                information of the QR code or an error message in case of a failure.
+
+        Raises:
+            HTTPError: If there is an issue when attempting to fetch the status from
+                the external service.
         """
-        qr_code = get_object_or_404(QrCode, uuid=pk)
+        qr_code = get_object_or_404(QrCode, uuid=uuid)
         # Request the API to get the status of the QR code
         qrcode_service = QrCodeService()
         try:

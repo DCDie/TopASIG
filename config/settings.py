@@ -32,8 +32,7 @@ if ENV_FILE.exists():
 DEBUG = env.bool("DEBUG")
 DOMAIN = env.str("DOMAIN", default="https://topasig.md")
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 

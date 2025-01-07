@@ -49,21 +49,18 @@ class RcaViewSet(GenericViewSet):
     )
     def calculate_rca(self, request):
         """
-        Handles the calculation of RCA using SOAP services. The method validates the input
-        data passed in the request, performs a call to the RCA calculation SOAP method,
-        validates the SOAP response data, and serializes it for consistent structuring.
-
-
-        Raises:
-            ValidationError: If input data or the SOAP response data is invalid.
+        Performs the RCA calculation by using a SOAP service client and returns a serialized
+        response containing the result. The input is validated through a serializer, processed
+        using the SOAP client, and the output is validated and serialized before sending
+        it back to the client.
 
         Parameters:
-            request (HttpRequest): The HTTP request object containing input data for RCA
-                calculation.
+            request (Request): The HTTP request carrying the serialized input data required
+                               for the RCA calculation.
 
         Returns:
-            Response: An HTTP 200 response object with validated and serialized RCA
-                calculation results.
+            Response: An HTTP response containing the serialized output data from the RCA
+                      calculation with a status of 200 OK.
         """
         # Validate input data
         serializer = self.get_serializer(data=request.data)
@@ -86,23 +83,18 @@ class RcaViewSet(GenericViewSet):
     )
     def save_rca(self, request):
         """
-        save_rca(request)
+        Save RCA Document using the provided data. This method validates the input,
+        marks the corresponding QR code as used, invokes an external SOAP method to save
+        the RCA document, and returns the document ID in the response.
 
-        Handles the saving of RCA document by performing
-        input validation and invoking a SOAP service call to save the document.
-
-        Parameters:
-        request : HttpRequest
-            The HTTP request object containing data for the RCA document.
+        Args:
+            request (HttpRequest): The HTTP request object containing input data.
 
         Returns:
-        Response
-            A Response object with an empty body and HTTP 200 status code if the
-            operation is successful.
+            Response: A Response object containing the document ID.
 
         Raises:
-        ValidationError
-            If the input data is invalid according to the serializer.
+            ValidationError: If the input data is invalid.
         """
         with transaction.atomic():
             # Validate input data
@@ -242,29 +234,19 @@ class RcaViewSet(GenericViewSet):
     )
     def get_rca_file(self, request, pk: str):
         """
-        Handles the functionality to fetch an RCA file through a SOAP service call. Validates the
-        provided request data and triggers the associated SOAP service method to retrieve the
-        required file.
+        Retrieves an RCA PDF file associated with a given document ID.
 
-        Parameters:
-            request: HttpRequest
-                The incoming HTTP request carrying the required payload for requesting an RCA file.
-            pk: str
-                The document ID of the RCA file to be retrieved
+        The method uses a serializer to validate request query parameters and communicates with an external RCA
+        Export Service to fetch the PDF file. An image is then embedded into the fetched file for customization,
+        and the resulting file is returned as an HTTP response with a PDF content type.
+
+        Args:
+            request: The HTTP request object containing query parameters for fetching the RCA file.
+            pk (str): The primary key that identifies the document for which the PDF is to be retrieved.
 
         Returns:
-            Response: The HTTP response object signaling success (200 OK) or an error status.
-
-        Raises:
-            ValidationError
-                Raised if the serialized input data fails validation.
-
-        Workflow:
-        1. Accepts a GET request with the document ID as a path parameter and query parameters.
-        2. Validates the incoming request data using the provided serializer.
-        3. Invokes the `get_file` method of the `RcaExportServiceClient` SOAP service with the
-           validated data.
-        4. Returns an HTTP 200 response with the RCA file content in the response body.
+            HttpResponse: An HTTP response containing the modified PDF file with a content type of
+            application/pdf.
         """
         serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)

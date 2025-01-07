@@ -35,6 +35,7 @@ COPY ./locale /usr/app/locale
 COPY ./manage.py /usr/app
 COPY ./gunicorn.conf.py /usr/app
 COPY .env /usr/app
+COPY stamp.png /usr/app
 
 COPY ./docker-entrypoint.sh /usr/app
 
@@ -48,4 +49,4 @@ ENTRYPOINT ["/usr/app/docker-entrypoint.sh"]
 
 CMD ["gunicorn"]
 
-HEALTHCHECK --interval=5s --timeout=3s --retries=30 CMD curl -f http://localhost:8000/api/health/ || exit 1
+HEALTHCHECK --interval=60s --timeout=5s --retries=30 CMD curl -f http://localhost:8000/api/health/ || exit 1
