@@ -7,7 +7,6 @@ from apps.ensurance.constants import (
     GreenCardZones,
     OperationModes,
     OperationModesStrings,
-    PaymentModes,
     PossessionBase,
     TermInsurance,
     Territories,
@@ -83,7 +82,7 @@ class CalculateRCAOutputSerializer(serializers.Serializer):
 
 
 class CalculateGreenCardOutputSerializer(serializers.Serializer):
-    PrimeSum = serializers.DecimalField(max_digits=15, decimal_places=2)
+    InsurersPrime = InsurersPrimeSerializer()
     BonusMalusClass = serializers.IntegerField()
     IsSuccess = serializers.BooleanField()
     ErrorMessage = serializers.CharField(allow_null=True, allow_blank=True)
@@ -93,10 +92,6 @@ class CalculateGreenCardOutputSerializer(serializers.Serializer):
     VehicleMark = serializers.CharField(allow_null=True, allow_blank=True)
     VehicleModel = serializers.CharField(allow_null=True, allow_blank=True)
     VehicleRegistrationNumber = serializers.CharField(allow_null=True, allow_blank=True)
-
-    # Additional fields as per later WSDL sections
-    PrimeSumMDL = serializers.DecimalField(max_digits=15, decimal_places=2)
-    ExchangeRate = serializers.DecimalField(max_digits=15, decimal_places=4)
     VehicleCategory = serializers.ChoiceField(
         allow_null=True, allow_blank=True, choices=GreenCardVehicleCategories.choices
     )
@@ -145,21 +140,14 @@ class SaveRcaDocumentSerializer(serializers.Serializer):
 
 class GreenCardDocumentModelSerializer(serializers.Serializer):
     Company = CompanyModelSerializer(required=False)
-    Broker = CompanyModelSerializer(required=False)
     InsuredPhysicalPerson = PhysicalPersonModelSerializer(required=False)
     InsuredJuridicalPerson = JuridicalPersonModelSerializer(required=False)
-    InsuredVehicle = VehicleModelSerializer(required=False)
-    InsuredTrailer = VehicleModelSerializer(required=False)
-    StartDate = serializers.DateTimeField()
-    PaymentDate = serializers.DateTimeField()
+    InsuredVehicle = VehicleModelSerializer()
+    StartDate = serializers.DateField()
+    PaymentDate = serializers.DateField()
     TermInsurance = serializers.ChoiceField(choices=TermInsurance.choices)
-    PaymentMode = serializers.ChoiceField(choices=PaymentModes.choices)
-    FiscalDocumentNumber = serializers.CharField(required=False, allow_blank=True)
     PossessionBase = serializers.ChoiceField(choices=PossessionBase.choices)
-    DocumentPossessionBaseNumber = serializers.CharField(required=False, allow_blank=True)
     DocumentPossessionBaseDate = serializers.DateTimeField(allow_null=True)
-    DocumentPossessionBaseOtherTitle = serializers.CharField(required=False, allow_blank=True)
-    DocumentPossessionBaseNote = serializers.CharField(required=False, allow_blank=True)
     GreenCardZone = serializers.ChoiceField(choices=GreenCardZones.choices)
     qrCode = serializers.SlugRelatedField(
         required=True,

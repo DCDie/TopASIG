@@ -176,7 +176,7 @@ class RcaExportServiceClient:
         Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
         RequestType = self.client.get_type("ns0:GreenCardDocumentModel")
         document_request["Employee"] = Employee
-        document_request = RequestType(**document_request)
+        document_request = RequestType(**document_request, PaymentMode=PaymentModes.TRANSFER)
 
         try:
             self.authenticate()

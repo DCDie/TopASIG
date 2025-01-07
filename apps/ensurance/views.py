@@ -184,7 +184,7 @@ class RcaViewSet(GenericViewSet):
             # Call the SOAP method
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
-        return Response({}, status=status.HTTP_200_OK)
+        return Response({"DocumentId": response.decode().split("</Id>")[0].split("<Id>")[1]}, status=status.HTTP_200_OK)
 
     @extend_schema(responses={200: Serializer})
     @action(
