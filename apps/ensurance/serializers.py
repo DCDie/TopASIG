@@ -19,7 +19,6 @@ from apps.payment.models import QrCode
 class CalculateRCAInputSerializer(serializers.Serializer):
     OperatingModes = serializers.ChoiceField(choices=OperationModes.choices)
     PersonIsJuridical = serializers.BooleanField(default=False)
-    Territory = serializers.ChoiceField(choices=Territories.choices)
     IDNX = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, max_length=13, min_length=13, help_text="IDNP or IDNO"
     )
@@ -54,11 +53,33 @@ class CalculateGreenCardInputSerializer(serializers.Serializer):
     )
 
 
+class InsurerPrimeRCASerializer(serializers.Serializer):
+    Name = serializers.CharField(max_length=255)
+    IDNO = serializers.CharField(max_length=13, min_length=13)
+    PrimeSum = serializers.DecimalField(max_digits=20, decimal_places=2)
+    is_active = serializers.BooleanField(default=True)
+    logo = serializers.URLField(
+        allow_null=True,
+        required=False,
+        default="https://www.google.com/url?sa=i&url=https%3A%2F%2Fdataset.gov.md%2Fru%2Forganization%2F1015601000134&psig=AOvVaw0lWpKM2jNr6jxpf6d44FTo&ust=1736284024523000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMDPkZyA4ooDFQAAAAAdAAAAABAE",
+    )
+
+
+class InsurersPrimeSerializer(serializers.Serializer):
+    InsurerPrimeRCAI = InsurerPrimeRCASerializer(many=True)
+
+
 class CalculateRCAOutputSerializer(serializers.Serializer):
-    PrimeSum = serializers.DecimalField(max_digits=15, decimal_places=2)
+    InsurersPrime = InsurersPrimeSerializer()
     BonusMalusClass = serializers.IntegerField()
     IsSuccess = serializers.BooleanField()
-    ErrorMessage = serializers.CharField(allow_null=True, allow_blank=True)
+    ErrorMessage = serializers.CharField(allow_null=True, required=False)
+    Territory = serializers.CharField(max_length=100)
+    PersonFirstName = serializers.CharField(max_length=100)
+    PersonLastName = serializers.CharField(max_length=100)
+    VehicleMark = serializers.CharField(max_length=100)
+    VehicleModel = serializers.CharField(max_length=100)
+    VehicleRegistrationNumber = serializers.CharField(max_length=20)
 
 
 class CalculateGreenCardOutputSerializer(serializers.Serializer):
@@ -81,58 +102,48 @@ class CalculateGreenCardOutputSerializer(serializers.Serializer):
     )
 
 
-# Serializers for save rca and green card documents
-
-
-class AddressModelSerializer(serializers.Serializer):
-    RegionName = serializers.CharField(required=False, allow_blank=True)
-    Locality = serializers.CharField(required=False, allow_blank=True)
-    Street = serializers.CharField(required=False, allow_blank=True)
-    House = serializers.CharField(required=False, allow_blank=True)
-    Block = serializers.CharField(required=False, allow_blank=True)
-    Flat = serializers.CharField(required=False, allow_blank=True)
-
-
 class CompanyModelSerializer(serializers.Serializer):
     IDNO = serializers.CharField(required=False, allow_blank=True)
 
 
 class PhysicalPersonModelSerializer(serializers.Serializer):
-    IdentificationCode = serializers.CharField(required=False, allow_blank=True)
-    LastName = serializers.CharField(required=False, allow_blank=True)
-    FirstName = serializers.CharField(required=False, allow_blank=True)
-    MiddleName = serializers.CharField(required=False, allow_blank=True)
-    BirthDate = serializers.DateTimeField()
-    Phone = serializers.CharField(required=False, allow_blank=True)
-    Address = AddressModelSerializer(required=False)
+    IdentificationCode = serializers.CharField()
+    BirthDate = serializers.DateField()
     IsFromTransnistria = serializers.BooleanField()
     PersonIsExternal = serializers.BooleanField()
 
 
 class JuridicalPersonModelSerializer(serializers.Serializer):
-    IdentificationCode = serializers.CharField(required=False, allow_blank=True)
-    Name = serializers.CharField(required=False, allow_blank=True)
-    Phone = serializers.CharField(required=False, allow_blank=True)
-    Address = AddressModelSerializer(required=False)
+    IdentificationCode = serializers.CharField()
 
 
 class VehicleModelSerializer(serializers.Serializer):
-    MarkName = serializers.CharField(required=False, allow_blank=True)
-    Model = serializers.CharField(required=False, allow_blank=True)
     ProductionYear = serializers.IntegerField()
-    RegistrationNumber = serializers.CharField(required=False, allow_blank=True)
     RegistrationCertificateNumber = serializers.CharField(required=False, allow_blank=True)
     CilinderVolume = serializers.IntegerField()
     TotalWeight = serializers.IntegerField()
     EnginePower = serializers.IntegerField()
     Seats = serializers.IntegerField()
-    VinCode = serializers.CharField(required=False, allow_blank=True)
-    IDNV = serializers.CharField(required=False, allow_blank=True)
-    EngineNr = serializers.CharField(required=False, allow_blank=True)
-    OwnerPersonalCode = serializers.CharField(required=False, allow_blank=True)
 
 
-class BaseDocumentModelSerializer(serializers.Serializer):
+class SaveRcaDocumentSerializer(serializers.Serializer):
+    Company = CompanyModelSerializer()
+    InsuredPhysicalPerson = PhysicalPersonModelSerializer(required=False)
+    InsuredJuridicalPerson = JuridicalPersonModelSerializer(required=False)
+    InsuredVehicle = VehicleModelSerializer()
+    StartDate = serializers.DateField()
+    PaymentDate = serializers.DateField()
+    PossessionBase = serializers.ChoiceField(choices=PossessionBase.choices, default=PossessionBase.PROPERTY)
+    DocumentPossessionBaseDate = serializers.DateField()
+    OperatingMode = serializers.ChoiceField(choices=OperationModesStrings.choices, default=OperationModesStrings.USUAL)
+    qrCode = serializers.SlugRelatedField(
+        help_text="QR Code UUID",
+        queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),
+        slug_field="uuid",
+    )
+
+
+class GreenCardDocumentModelSerializer(serializers.Serializer):
     Company = CompanyModelSerializer(required=False)
     Broker = CompanyModelSerializer(required=False)
     InsuredPhysicalPerson = PhysicalPersonModelSerializer(required=False)
@@ -149,29 +160,16 @@ class BaseDocumentModelSerializer(serializers.Serializer):
     DocumentPossessionBaseDate = serializers.DateTimeField(allow_null=True)
     DocumentPossessionBaseOtherTitle = serializers.CharField(required=False, allow_blank=True)
     DocumentPossessionBaseNote = serializers.CharField(required=False, allow_blank=True)
-
-
-class RcaDocumentModelSerializer(BaseDocumentModelSerializer):
-    OperatingMode = serializers.ChoiceField(choices=OperationModesStrings.choices)
-    QRCode = serializers.PrimaryKeyRelatedField(
-        required=True,
-        allow_null=False,
-        help_text="QR Code ID",
-        queryset=QrCode.objects.filter(status=StatusChoices.PAID),
-    )
-
-
-class GreenCardDocumentModelSerializer(BaseDocumentModelSerializer):
     GreenCardZone = serializers.ChoiceField(choices=GreenCardZones.choices)
-    QRCode = serializers.PrimaryKeyRelatedField(
+    qrCode = serializers.SlugRelatedField(
         required=True,
         allow_null=False,
-        help_text="QR Code ID",
-        queryset=QrCode.objects.filter(status=StatusChoices.PAID),
+        help_text="QR Code UUID",
+        queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),
+        slug_field="uuid",
     )
 
 
 class GetFileRequestSerializer(serializers.Serializer):
-    DocumentId = serializers.IntegerField()
-    DocumentType = serializers.ChoiceField(choices=DocumentType.choices)
-    ContractType = serializers.ChoiceField(choices=ContractType.choices)
+    DocumentType = serializers.ChoiceField(choices=DocumentType.choices, required=False, default=DocumentType.CONTRACT)
+    ContractType = serializers.ChoiceField(choices=ContractType.choices, required=False, default=ContractType.RCAI)

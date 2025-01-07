@@ -10,7 +10,7 @@ class VbPayeeQrHeaderDtoSerializer(serializers.Serializer):
 
 
 class MoneyDtoSerializer(serializers.Serializer):
-    sum = serializers.FloatField(min_value=0)
+    sum = serializers.FloatField(min_value=0.01)
     currency = serializers.CharField(max_length=10, allow_blank=True, required=False, default="MDL")
 
 

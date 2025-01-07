@@ -1,10 +1,14 @@
-from drf_spectacular.utils import extend_schema
+from django.db import transaction
+from django.http import HttpResponse
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
+from zeep.helpers import serialize_object
 
+from apps.ensurance.helpers import insert_image_into_pdf
 from apps.ensurance.rca import RcaExportServiceClient
 from apps.ensurance.serializers import (
     CalculateGreenCardInputSerializer,
@@ -13,7 +17,7 @@ from apps.ensurance.serializers import (
     CalculateRCAOutputSerializer,
     GetFileRequestSerializer,
     GreenCardDocumentModelSerializer,
-    RcaDocumentModelSerializer,
+    SaveRcaDocumentSerializer,
 )
 
 
@@ -69,7 +73,7 @@ class RcaViewSet(GenericViewSet):
         response = RcaExportServiceClient().calculate_rca(serializer.validated_data)
 
         # Validate and serialize the response
-        output_serializer = CalculateRCAOutputSerializer(data=response)
+        output_serializer = CalculateRCAOutputSerializer(data=serialize_object(response))
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
@@ -78,7 +82,7 @@ class RcaViewSet(GenericViewSet):
         detail=False,
         methods=["post"],
         url_path="save-rca",
-        serializer_class=RcaDocumentModelSerializer,
+        serializer_class=SaveRcaDocumentSerializer,
     )
     def save_rca(self, request):
         """
@@ -100,14 +104,18 @@ class RcaViewSet(GenericViewSet):
         ValidationError
             If the input data is invalid according to the serializer.
         """
-        # Validate input data
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            # Validate input data
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
 
-        # Call the SOAP method
-        response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
+            qr_code = serializer.validated_data.pop("qrCode")
+            qr_code.is_used = True
+            qr_code.save()
 
-        return Response({}, status=status.HTTP_200_OK)
+            # Call the SOAP method
+            response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
+        return Response({"DocumentId": response.decode().split("</Id>")[0].split("<Id>")[1]}, status=status.HTTP_200_OK)
 
     @extend_schema(responses={200: CalculateGreenCardOutputSerializer})
     @action(
@@ -171,12 +179,18 @@ class RcaViewSet(GenericViewSet):
             Other SOAP-related errors depending on the behavior of the external SOAP
             service client during the operation.
         """
-        # Validate input data
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
-        # Call the SOAP method
-        response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
+        with transaction.atomic():
+            # Validate input data
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            qr_code = serializer.validated_data.pop("QRCode")
+            qr_code.is_used = True
+            qr_code.save()
+
+            # Call the SOAP method
+            response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -211,14 +225,22 @@ class RcaViewSet(GenericViewSet):
         # Some logic to calculate the cost
         return Response({}, status=status.HTTP_200_OK)
 
-    @extend_schema(responses={200: Serializer})
+    @extend_schema(
+        parameters=[GetFileRequestSerializer],
+        responses={
+            200: OpenApiResponse(
+                description="RCA PDF file retrieved successfully.",
+                response=HttpResponse(content_type="application/pdf"),
+            )
+        },
+    )
     @action(
-        detail=False,
-        methods=["post"],
+        detail=True,
+        methods=["get"],
         url_path="get-rca-file",
         serializer_class=GetFileRequestSerializer,
     )
-    def get_rca_file(self, request):
+    def get_rca_file(self, request, pk: str):
         """
         Handles the functionality to fetch an RCA file through a SOAP service call. Validates the
         provided request data and triggers the associated SOAP service method to retrieve the
@@ -227,6 +249,8 @@ class RcaViewSet(GenericViewSet):
         Parameters:
             request: HttpRequest
                 The incoming HTTP request carrying the required payload for requesting an RCA file.
+            pk: str
+                The document ID of the RCA file to be retrieved
 
         Returns:
             Response: The HTTP response object signaling success (200 OK) or an error status.
@@ -236,17 +260,14 @@ class RcaViewSet(GenericViewSet):
                 Raised if the serialized input data fails validation.
 
         Workflow:
-        1. Accepts a POST request at the specified endpoint.
+        1. Accepts a GET request with the document ID as a path parameter and query parameters.
         2. Validates the incoming request data using the provided serializer.
         3. Invokes the `get_file` method of the `RcaExportServiceClient` SOAP service with the
            validated data.
-        4. Returns an HTTP 200 OK response upon successful execution of the SOAP method.
+        4. Returns an HTTP 200 response with the RCA file content in the response body.
         """
-        # Validate input data
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
-
-        # Call the SOAP method
-        response = RcaExportServiceClient().get_file(**serializer.validated_data)
-
-        return Response({}, status=status.HTTP_200_OK)
+        response = RcaExportServiceClient().get_file(DocumentId=pk, **serializer.validated_data)
+        content = insert_image_into_pdf(response.FileContent)
+        return HttpResponse(content, content_type="application/pdf")

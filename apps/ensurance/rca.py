@@ -2,7 +2,10 @@ import zeep
 from django.conf import settings
 from rest_framework.exceptions import APIException, ValidationError
 from zeep import Client
+from zeep.exceptions import TransportError
 from zeep.transports import Transport
+
+from apps.ensurance.constants import PaymentModes, TermInsurance
 
 
 class RcaExportServiceClient:
@@ -184,7 +187,7 @@ class RcaExportServiceClient:
             raise ValidationError(detail={"detail": response.Errors.string})
         return response
 
-    def save_rca_document(self, document_request: dict, IDNP: str = settings.ASIG_IDNP):
+    def save_rca_document(self, document_request: dict, IDNP: str = settings.ASIG_IDNP) -> bytes:
         """
         Saves an RCA document to the external service using the provided document
         request details and optional IDNP.
@@ -212,18 +215,24 @@ class RcaExportServiceClient:
         Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
         RequestType = self.client.get_type("ns0:RcaDocumentModel")
         document_request["Employee"] = Employee
-        document_request = RequestType(**document_request)
+        document_request = RequestType(
+            **document_request, TermInsurance=TermInsurance.M12, PaymentMode=PaymentModes.TRANSFER
+        )
 
         try:
             self.authenticate()
             response = self.service.SaveRcaDocument(SecurityToken=self.security_token, request=document_request)
+        except TransportError as e:
+            if e.status_code == 200:
+                return e.content
+            raise APIException(detail={"detail": str(e)}) from e
         except Exception as e:  # noqa: BLE001
             raise APIException(detail={"detail": str(e)}) from e
         if response.Success is False:
             raise ValidationError(detail={"detail": response.Errors.string})
         return response
 
-    def get_file(self, DocumentId: str, DocumentType: str, ContractType: str):
+    def get_file(self, DocumentId: str, DocumentType: str = "InsurancePolicy", ContractType: str = "RCAI"):
         """
         Fetches a file based on provided document details.
 
@@ -234,10 +243,6 @@ class RcaExportServiceClient:
         Parameters:
             DocumentId: str
                 Unique identifier of the document to be retrieved.
-            DocumentType: str
-                Type of the document being requested.
-            ContractType: str
-                Specifies the contract type associated with the document.
 
         Returns:
             object
