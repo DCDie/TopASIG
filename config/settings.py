@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "django_celery_results",
+    "django_minio_backend",
     # Internal apps
     "apps.ensurance",
     "apps.common",
@@ -182,8 +183,8 @@ REST_FRAMEWORK = {
 
 # Spectacular settings
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Asig API",
-    "DESCRIPTION": "Your Asig API",
+    "TITLE": "Top Asig API",
+    "DESCRIPTION": "Api for website topasig.md",
     "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": True,
 }
@@ -236,3 +237,19 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 10,  # every 10 seconds
     },
 }
+
+# Minio
+DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
+STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
+MINIO_ENDPOINT = env.str("MINIO_ENDPOINT")
+MINIO_EXTERNAL_ENDPOINT = env.str("MINIO_EXTERNAL_ENDPOINT", default=MINIO_ENDPOINT)
+MINIO_ACCESS_KEY = env.str("MINIO_ACCESS_KEY")
+MINIO_SECRET_KEY = env.str("MINIO_SECRET_KEY")
+MINIO_USE_HTTPS = env.bool("MINIO_STORAGE_USE_HTTPS", default=False)
+MINIO_EXTERNAL_ENDPOINT_USE_HTTPS = env.bool("MINIO_EXTERNAL_ENDPOINT_USE_HTTPS", default=MINIO_USE_HTTPS)
+MINIO_MEDIA_FILES_BUCKET = "media"
+MINIO_STATIC_FILES_BUCKET = "static"
+
+MINIO_PUBLIC_BUCKETS = [
+    MINIO_MEDIA_FILES_BUCKET,
+]
