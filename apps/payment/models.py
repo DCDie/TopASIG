@@ -1,6 +1,9 @@
 import uuid
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeChoices, StatusChoices
 
@@ -38,3 +41,16 @@ class QrCode(models.Model):
 
     def __str__(self):
         return f"QR Code {self.uuid} - {self.status}"
+
+
+@receiver(post_save, sender=QrCode)
+def qr_code_post_save(sender, instance, created, **kwargs):
+    if created:
+        from apps.ensurance.constants import FileTypes
+        from apps.ensurance.models import File
+
+        File.objects.create(
+            external_id=str(instance.uuid),
+            type=FileTypes.QR,
+            file=SimpleUploadedFile(f"{instance.uuid}.png", instance.qr_as_image.encode()),
+        )

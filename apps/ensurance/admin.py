@@ -1,5 +1,5 @@
 from django.contrib import admin
 
-from apps.ensurance.models import Document
+from apps.ensurance.models import File
 
-admin.site.register(Document)
+admin.site.register(File)

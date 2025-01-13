@@ -78,6 +78,15 @@ class DocumentType(models.TextChoices):
     DEMAND = "Demand", _("Demand")
     INSURANCE_POLICY = "InsurancePolicy", _("Insurance Policy")
 
+
 class ContractType(models.TextChoices):
     RCAI = "RCAI", _("RCAI")
     CV = "CV", _("CV")
+
+
+class FileTypes(models.TextChoices):
+    RCA = "RCA", _("RCA")
+    GREEN_CARD = "GreenCard", _("Green Card")
+    MEDICAL_INSURANCE = "MedicalInsurance", _("Medical Insurance")
+    QR = "QR", _("QR")
+    OTHER = "Other", _("Other")
