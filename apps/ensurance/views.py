@@ -70,7 +70,45 @@ class RcaViewSet(GenericViewSet):
         response = RcaExportServiceClient().calculate_rca(serializer.validated_data)
 
         # Validate and serialize the response
-        output_serializer = CalculateRCAOutputSerializer(data=serialize_object(response))
+        import xml.etree.ElementTree as ET
+
+        namespaces = {
+            "soap": "http://schemas.xmlsoap.org/soap/envelope/",
+            "ns": "http://172.30.255.11:5368/RcaExportService.asmx",
+        }
+        root = ET.fromstring(response.text)
+
+        # Extract data into a dictionary
+        response_data = {}
+        calculate_result = root.find(".//ns:CalculateRCAIPremiumResult", namespaces)
+
+        if calculate_result is not None:
+            response_data["InsurersPrime"] = {"InsurerPrimeRCAI": []}
+            for insurer in calculate_result.findall(".//ns:InsurerPrimeRCAI", namespaces):
+                response_data["InsurersPrime"]["InsurerPrimeRCAI"].append(
+                    {
+                        "Name": insurer.find("ns:Name", namespaces).text,
+                        "IDNO": insurer.find("ns:IDNO", namespaces).text,
+                        "PrimeSum": float(insurer.find("ns:PrimeSum", namespaces).text),
+                        "PrimeSumMDL": float(insurer.find("ns:PrimeSum", namespaces).text),
+                    }
+                )
+            response_data["BonusMalusClass"] = int(calculate_result.find("ns:BonusMalusClass", namespaces).text)
+            response_data["IsSuccess"] = calculate_result.find("ns:IsSuccess", namespaces).text.lower() == "true"
+            response_data["Territory"] = calculate_result.find("ns:Territory", namespaces).text
+            response_data["PersonFirstName"] = calculate_result.find("ns:PersonFirstName", namespaces).text
+            response_data["PersonLastName"] = calculate_result.find("ns:PersonLastName", namespaces).text
+            response_data["VehicleMark"] = calculate_result.find("ns:VehicleMark", namespaces).text
+            response_data["VehicleModel"] = calculate_result.find("ns:VehicleModel", namespaces).text
+            response_data["VehicleRegistrationNumber"] = calculate_result.find(
+                "ns:VehicleRegistrationNumber", namespaces
+            ).text
+            response_data["AgeUnder23"] = calculate_result.find("ns:AgeUnder23", namespaces).text.lower() == "true"
+            response_data["ExperienceUnder2"] = (
+                calculate_result.find("ns:ExperienceUnder2", namespaces).text.lower() == "true"
+            )
+
+        output_serializer = CalculateRCAOutputSerializer(data=response_data)
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 

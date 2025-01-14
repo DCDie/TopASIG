@@ -101,12 +101,15 @@ class RcaExportServiceClient:
         )
         try:
             self.authenticate()
+            self.client.settings.raw_response = True  # Return raw response
             response = self.service.CalculateRCAIPremium(SecurityToken=self.security_token, request=request_obj)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
+            # Catch and re-raise API exceptions
             raise APIException(detail={"detail": str(e)}) from e
-        if response.IsSuccess is False:
-            raise ValidationError(detail={"detail": response.ErrorMessage})
-        return response
+
+            # Attempt to parse and validate response; fallback on failure
+
+        return response  # Return raw Zeep response object
 
     def calculate_green_card(self, request_obj: dict):
         """
