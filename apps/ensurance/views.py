@@ -83,6 +83,9 @@ class RcaViewSet(GenericViewSet):
         calculate_result = root.find(".//ns:CalculateRCAIPremiumResult", namespaces)
 
         if calculate_result is not None:
+            if calculate_result.find("ns:IsSuccess", namespaces).text.lower() == "false":
+                response_data["detail"] = calculate_result.find("ns:ErrorMessage", namespaces).text
+                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
             response_data["InsurersPrime"] = {"InsurerPrimeRCAI": []}
             for insurer in calculate_result.findall(".//ns:InsurerPrimeRCAI", namespaces):
                 response_data["InsurersPrime"]["InsurerPrimeRCAI"].append(
