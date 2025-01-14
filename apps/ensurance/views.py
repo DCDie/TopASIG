@@ -107,7 +107,7 @@ class RcaViewSet(GenericViewSet):
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
-        return Response({"DocumentId": response.decode().split("</Id>")[0].split("<Id>")[1]}, status=status.HTTP_200_OK)
+            return Response({"DocumentId": response.Response["Id"]}, status=status.HTTP_200_OK)
 
     @extend_schema(responses={200: CalculateGreenCardOutputSerializer})
     @action(
@@ -137,7 +137,7 @@ class RcaViewSet(GenericViewSet):
         # Call the SOAP method
         response = RcaExportServiceClient().calculate_green_card(serializer.validated_data)
 
-        output_serializer = CalculateGreenCardOutputSerializer(data=response)
+        output_serializer = CalculateGreenCardOutputSerializer(data=serialize_object(response))
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
@@ -177,14 +177,14 @@ class RcaViewSet(GenericViewSet):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
-            qr_code = serializer.validated_data.pop("QRCode")
+            qr_code = serializer.validated_data.pop("qrCode")
             qr_code.is_used = True
             qr_code.save()
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
-        return Response({"DocumentId": response.decode().split("</Id>")[0].split("<Id>")[1]}, status=status.HTTP_200_OK)
+            return Response({"DocumentId": response.Response["Id"]}, status=status.HTTP_200_OK)
 
     @extend_schema(responses={200: Serializer})
     @action(

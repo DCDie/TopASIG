@@ -1,4 +1,5 @@
 import uuid
+from base64 import b64decode
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models
@@ -27,7 +28,7 @@ class QrCode(models.Model):
         max_length=1, choices=PmtContextChoices.choices, blank=True, null=True, help_text="Payment context"
     )
     qr_as_text = models.TextField(blank=True, null=True, help_text="QR code represented as text")
-    qr_as_image = models.TextField(blank=True, null=True, help_text="QR code represented as an image")
+    qr_as_image = models.TextField(blank=True, null=True, help_text="QR code represented as an image encoded in base64")
     status = models.CharField(
         max_length=10,
         choices=StatusChoices.choices,
@@ -49,8 +50,9 @@ def qr_code_post_save(sender, instance, created, **kwargs):
         from apps.ensurance.constants import FileTypes
         from apps.ensurance.models import File
 
-        File.objects.create(
-            external_id=str(instance.uuid),
-            type=FileTypes.QR,
-            file=SimpleUploadedFile(f"{instance.uuid}.png", instance.qr_as_image.encode()),
-        )
+        with SimpleUploadedFile(f"{instance.uuid}.png", b64decode(instance.qr_as_image).decode().encode()) as f:
+            File.objects.create(
+                external_id=str(instance.uuid),
+                type=FileTypes.QR,
+                file=f,
+            )
