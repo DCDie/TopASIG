@@ -111,6 +111,16 @@ class RcaExportServiceClient:
 
         return response  # Return raw Zeep response object
 
+        # TODO - This will work when BNM will fix RCA API
+        # try:
+        #     self.authenticate()
+        #     response = self.service.CalculateRCAIPremium(SecurityToken=self.security_token, request=request_obj)
+        # except Exception as e:  # noqa: BLE001
+        #     raise APIException(detail={"detail": str(e)}) from e
+        # if response.IsSuccess is False:
+        #     raise ValidationError(detail={"detail": response.ErrorMessage})
+        # return response
+
     def calculate_green_card(self, request_obj: dict):
         """
         Calculates the green card premium based on the provided request object.

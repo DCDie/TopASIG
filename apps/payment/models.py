@@ -50,7 +50,7 @@ def qr_code_post_save(sender, instance, created, **kwargs):
         from apps.ensurance.constants import FileTypes
         from apps.ensurance.models import File
 
-        with SimpleUploadedFile(f"{instance.uuid}.png", b64decode(instance.qr_as_image).decode().encode()) as f:
+        with SimpleUploadedFile(f"{instance.uuid}.png", b64decode(instance.qr_as_image)) as f:
             File.objects.create(
                 external_id=str(instance.uuid),
                 type=FileTypes.QR,

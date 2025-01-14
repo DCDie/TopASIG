@@ -8,7 +8,9 @@ from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 from zeep.helpers import serialize_object
 
+from apps.ensurance.constants import ContractType
 from apps.ensurance.helpers import insert_image_into_pdf
+from apps.ensurance.models import File
 from apps.ensurance.rca import RcaExportServiceClient
 from apps.ensurance.serializers import (
     CalculateGreenCardInputSerializer,
@@ -19,6 +21,7 @@ from apps.ensurance.serializers import (
     GreenCardDocumentModelSerializer,
     SaveRcaDocumentSerializer,
 )
+from apps.ensurance.tasks import download_rcai_document
 
 
 class RcaViewSet(GenericViewSet):
@@ -68,6 +71,12 @@ class RcaViewSet(GenericViewSet):
 
         # Call the SOAP method
         response = RcaExportServiceClient().calculate_rca(serializer.validated_data)
+
+        # TODO: Use this when BNM will fix RCA API
+        # # Validate and serialize the response
+        # output_serializer = CalculateRCAOutputSerializer(data=serialize_object(response))
+        # output_serializer.is_valid(raise_exception=True)
+        # return Response(output_serializer.data, status=status.HTTP_200_OK)
 
         # Validate and serialize the response
         import xml.etree.ElementTree as ET
@@ -148,7 +157,9 @@ class RcaViewSet(GenericViewSet):
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
-            return Response({"DocumentId": response.Response["Id"]}, status=status.HTTP_200_OK)
+            DocumentId = response.Response["Id"]
+            download_rcai_document.apply_async(args=[DocumentId])
+            return Response({"DocumentId": DocumentId}, status=status.HTTP_200_OK)
 
     @extend_schema(responses={200: CalculateGreenCardOutputSerializer})
     @action(
@@ -291,6 +302,12 @@ class RcaViewSet(GenericViewSet):
         """
         serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
+
+        file = File.objects.filter(external_id=pk).first()
+        if file and serializer.validated_data["ContractType"] == ContractType.RCAI:
+            return HttpResponse(file.file.read(), content_type="application/pdf")
+
+        # Call the SOAP method to get the file in case it does not exist in the database
         response = RcaExportServiceClient().get_file(DocumentId=pk, **serializer.validated_data)
         content = insert_image_into_pdf(response.FileContent)
         return HttpResponse(content, content_type="application/pdf")

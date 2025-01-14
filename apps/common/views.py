@@ -1,5 +1,4 @@
 from django.db import connection
-from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
@@ -25,6 +24,7 @@ class HealthCheckView(GenericAPIView):
 
     authentication_classes = []
     permission_classes = []
+    serializer_class = None
 
     @staticmethod
     def get(request):
@@ -44,7 +44,7 @@ class HealthCheckView(GenericAPIView):
         try:
             RcaExportServiceClient().check_access()
             data["rca"] = "ok"
-        except Exception: # noqa BLE001
+        except Exception:  # noqa BLE001
             data["rca"] = "error"
 
         return Response(data)

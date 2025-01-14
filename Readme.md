@@ -1,6 +1,6 @@
-# Asig API
+# TopAsig API
 
-**Asig API** is a Django-based project designed as a web API with integrated tools for handling RESTful requests,
+**TopAsig API** is a Django-based project designed as a web API with integrated tools for handling RESTful requests,
 OpenAPI documentation, and more.
 
 ## Features
