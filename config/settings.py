@@ -37,6 +37,8 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    # Theme
+    "jazzmin",
     # Django apps
     "django.contrib.admin",
     "django.contrib.auth",
@@ -50,6 +52,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_celery_results",
     "django_minio_backend",
+    "drf_api_logger",
     # Internal apps
     "apps.ensurance",
     "apps.common",
@@ -65,6 +68,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -253,3 +257,48 @@ MINIO_STATIC_FILES_BUCKET = "static"
 MINIO_PUBLIC_BUCKETS = [
     MINIO_MEDIA_FILES_BUCKET,
 ]
+
+# SMTP settings
+EMAIL_BACKEND = env.str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env.str("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=True)
+EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
+
+# Logging
+DRF_API_LOGGER_DATABASE = True
+DRF_API_LOGGER_SKIP_URL_NAME = ["health-check", "schema-swagger-ui", "schema-redoc", "schema-swagger"]
+DRF_API_LOGGER_SKIP_NAMESPACE = ["admin"]
+DRF_API_LOGGER_SLOW_API_ABOVE = 2000
+
+# Jazzmin settings
+JAZZMIN_SETTINGS = {
+    "site_title": "Top Asig",
+    "site_header": "Top Asig",
+    "welcome_sign": "Welcome to Top Asig",
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+    "related_modal_active": False,
+    "navigation_expanded": True,
+    "search_bar": False,
+    "show_filters": False,
+    "show_sidebar": True,
+    "navigation_icons": "svg",
+    "theme": "default",
+    "iconset": "fontawesome",
+    "changeform_format_overrides": {
+        "auth.user": "vertical_tabs",
+    },
+    "icons": {
+        "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
+        "ensurance.File": "fas fa-file",
+        "payment.QrCode": "fas fa-money-check",
+        "drf_api_logger.APILogsModel": "fas fa-clipboard-list",
+        "django_celery_results.TaskResult": "fas fa-tasks",
+        "django_celery_results.GroupResult": "fas fa-tasks",
+    },
+}
