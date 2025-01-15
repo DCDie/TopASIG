@@ -95,7 +95,6 @@ services:
     image: bitnami/minio:latest
     ports:
       - "${MINIO_PORT:-49000}:9000"
-      - "${MINIO_PORT_1:-49001}:9001"
     volumes:
       - ./minio_data:/data
     environment:

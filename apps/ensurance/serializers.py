@@ -129,7 +129,6 @@ class SaveRcaDocumentSerializer(serializers.Serializer):
     InsuredJuridicalPerson = JuridicalPersonModelSerializer(required=False)
     InsuredVehicle = VehicleModelSerializer()
     StartDate = serializers.DateField()
-    PaymentDate = serializers.DateField()
     PossessionBase = serializers.ChoiceField(choices=PossessionBase.choices, default=PossessionBase.PROPERTY)
     DocumentPossessionBaseDate = serializers.DateField()
     OperatingMode = serializers.ChoiceField(choices=OperationModesStrings.choices, default=OperationModesStrings.USUAL)

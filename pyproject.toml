@@ -24,6 +24,7 @@ xmltodict = "^0.14.2"
 django-minio-backend = "^3.8.0"
 drf-api-logger = "^1.1.16"
 django-jazzmin = "^3.0.1"
+django-cleanup = "^9.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.3"

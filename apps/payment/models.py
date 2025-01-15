@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeChoices, StatusChoices
 
@@ -38,3 +39,7 @@ class QrCode(models.Model):
 
     def __str__(self):
         return f"QR Code {self.uuid} - {self.status}"
+
+    class Meta:
+        verbose_name = _("QR Code")
+        verbose_name_plural = _("QR Codes")

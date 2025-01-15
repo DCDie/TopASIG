@@ -10,7 +10,7 @@ from zeep.helpers import serialize_object
 
 from apps.ensurance.constants import ContractType
 from apps.ensurance.helpers import insert_image_into_pdf
-from apps.ensurance.models import File
+from apps.ensurance.models import File, RCACompany
 from apps.ensurance.rca import RcaExportServiceClient
 from apps.ensurance.serializers import (
     CalculateGreenCardInputSerializer,
@@ -97,12 +97,18 @@ class RcaViewSet(GenericViewSet):
                 return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
             response_data["InsurersPrime"] = {"InsurerPrimeRCAI": []}
             for insurer in calculate_result.findall(".//ns:InsurerPrimeRCAI", namespaces):
+                rca_company, _ = RCACompany.objects.get_or_create(
+                    idno=insurer.find("ns:IDNO", namespaces).text,
+                    defaults={"name": insurer.find("ns:Name", namespaces).text},
+                )
                 response_data["InsurersPrime"]["InsurerPrimeRCAI"].append(
                     {
                         "Name": insurer.find("ns:Name", namespaces).text,
                         "IDNO": insurer.find("ns:IDNO", namespaces).text,
                         "PrimeSum": float(insurer.find("ns:PrimeSum", namespaces).text),
                         "PrimeSumMDL": float(insurer.find("ns:PrimeSum", namespaces).text),
+                        "is_active": rca_company.is_active,
+                        "logo": rca_company.logo.url if rca_company.logo else None,
                     }
                 )
             response_data["BonusMalusClass"] = int(calculate_result.find("ns:BonusMalusClass", namespaces).text)
@@ -152,12 +158,16 @@ class RcaViewSet(GenericViewSet):
             serializer.is_valid(raise_exception=True)
 
             qr_code = serializer.validated_data.pop("qrCode")
+            serializer.validated_data["PaymentDate"] = qr_code.updated_at.date()
             qr_code.is_used = True
             qr_code.save()
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
-            DocumentId = response.Response["Id"]
+            if isinstance(response, bytes):
+                DocumentId = response.decode().split("</Id>")[0].split("<Id>")[1]
+            else:
+                DocumentId = response.Response["Id"]
             download_rcai_document.apply_async(args=[DocumentId])
             return Response({"DocumentId": DocumentId}, status=status.HTTP_200_OK)
 

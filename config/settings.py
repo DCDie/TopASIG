@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     "apps.ensurance",
     "apps.common",
     "apps.payment",
+    # Minio Cleanup
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 MIDDLEWARE = [
@@ -280,23 +282,12 @@ JAZZMIN_SETTINGS = {
     "site_title": "Top Asig",
     "site_header": "Top Asig",
     "welcome_sign": "Welcome to Top Asig",
-    "show_ui_builder": False,
-    "changeform_format": "horizontal_tabs",
-    "related_modal_active": False,
     "navigation_expanded": True,
-    "search_bar": False,
-    "show_filters": False,
-    "show_sidebar": True,
-    "navigation_icons": "svg",
-    "theme": "default",
-    "iconset": "fontawesome",
-    "changeform_format_overrides": {
-        "auth.user": "vertical_tabs",
-    },
     "icons": {
         "auth.user": "fas fa-user",
         "auth.group": "fas fa-users",
         "ensurance.File": "fas fa-file",
+        "ensurance.RCACompany": "fas fa-building",
         "payment.QrCode": "fas fa-money-check",
         "drf_api_logger.APILogsModel": "fas fa-clipboard-list",
         "django_celery_results.TaskResult": "fas fa-tasks",
