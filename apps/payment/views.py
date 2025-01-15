@@ -1,4 +1,8 @@
+from base64 import b64decode
+
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from requests import HTTPError
@@ -8,6 +12,8 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from apps.ensurance.constants import FileTypes
+from apps.ensurance.models import File
 from apps.payment.constants import StatusChoices
 from apps.payment.models import QrCode
 from apps.payment.qr import QrCodeService
@@ -91,20 +97,28 @@ class QrCodeViewSet(GenericViewSet):
         qrcode_service = QrCodeService()
         response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)
 
-        # Create the QR code and return the response
-        instance = QrCode.objects.create(
-            uuid=response_data.get("qrHeaderUUID"),
-            qr_type=validated_data.get("header").get("qrType"),
-            pmt_context=validated_data.get("header").get("pmtContext"),
-            qr_as_text=response_data.get("qrAsText"),
-            qr_as_image=response_data.get("qrAsImage"),
-            status=StatusChoices.ACTIVE,
-        )
-        response_data["qrCode"] = instance.pk
+        with transaction.atomic():
+            # Create the QR code and return the response
+            instance = QrCode.objects.create(
+                uuid=response_data.get("qrHeaderUUID"),
+                type=validated_data.get("header").get("qrType"),
+                pmt_context=validated_data.get("header").get("pmtContext"),
+                url=response_data.get("qrAsText"),
+                status=StatusChoices.ACTIVE,
+            )
+            with SimpleUploadedFile(f"{instance.uuid}.png", b64decode(response_data.get("qrAsImage"))) as f:
+                file = File.objects.create(
+                    external_id=str(instance.uuid),
+                    type=FileTypes.QR,
+                    file=f,
+                )
+                instance.file = file
+                instance.save()
 
-        response_serializer = CreatePayeeQrResponseSerializer(data=response_data)
-        response_serializer.is_valid(raise_exception=True)
-        return Response(response_serializer.data, status=status.HTTP_200_OK)
+            response_data["qrCode"] = instance.pk
+            response_serializer = CreatePayeeQrResponseSerializer(data=response_data)
+            response_serializer.is_valid(raise_exception=True)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(responses=GetQrStatusResponseSerializer)
     @action(detail=True, methods=["get"], url_path="status")

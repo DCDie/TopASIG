@@ -105,9 +105,9 @@ class CompanyModelSerializer(serializers.Serializer):
 
 class PhysicalPersonModelSerializer(serializers.Serializer):
     IdentificationCode = serializers.CharField()
-    BirthDate = serializers.DateField()
-    IsFromTransnistria = serializers.BooleanField()
-    PersonIsExternal = serializers.BooleanField()
+    BirthDate = serializers.DateField(required=False, default="2000-01-01")
+    IsFromTransnistria = serializers.BooleanField(default=False, required=False)
+    PersonIsExternal = serializers.BooleanField(default=False, required=False)
 
 
 class JuridicalPersonModelSerializer(serializers.Serializer):
@@ -115,12 +115,12 @@ class JuridicalPersonModelSerializer(serializers.Serializer):
 
 
 class VehicleModelSerializer(serializers.Serializer):
-    ProductionYear = serializers.IntegerField()
-    RegistrationCertificateNumber = serializers.CharField(required=False, allow_blank=True)
-    CilinderVolume = serializers.IntegerField()
-    TotalWeight = serializers.IntegerField()
-    EnginePower = serializers.IntegerField()
-    Seats = serializers.IntegerField()
+    ProductionYear = serializers.IntegerField(required=False, default=2025)
+    RegistrationCertificateNumber = serializers.CharField(required=True)
+    CilinderVolume = serializers.IntegerField(required=False, default=2000)
+    TotalWeight = serializers.IntegerField(required=False, default=2000)
+    EnginePower = serializers.IntegerField(required=False, default=200)
+    Seats = serializers.IntegerField(required=False, default=5)
 
 
 class SaveRcaDocumentSerializer(serializers.Serializer):
