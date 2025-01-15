@@ -129,8 +129,10 @@ class SaveRcaDocumentSerializer(serializers.Serializer):
     InsuredJuridicalPerson = JuridicalPersonModelSerializer(required=False)
     InsuredVehicle = VehicleModelSerializer()
     StartDate = serializers.DateField()
-    PossessionBase = serializers.ChoiceField(choices=PossessionBase.choices, default=PossessionBase.PROPERTY)
-    DocumentPossessionBaseDate = serializers.DateField()
+    PossessionBase = serializers.ChoiceField(
+        choices=PossessionBase.choices, default=PossessionBase.PROPERTY, required=False
+    )
+    DocumentPossessionBaseDate = serializers.DateField(required=False, default="2000-01-01")
     OperatingMode = serializers.ChoiceField(choices=OperationModesStrings.choices, default=OperationModesStrings.USUAL)
     qrCode = serializers.SlugRelatedField(
         help_text="QR Code UUID",

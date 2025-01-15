@@ -4,9 +4,13 @@ from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeC
 
 
 class VbPayeeQrHeaderDtoSerializer(serializers.Serializer):
-    qrType = serializers.ChoiceField(choices=QrTypeChoices.choices)  # noqa: N815
-    amountType = serializers.ChoiceField(choices=AmountTypeChoices.choices)  # noqa: N815
-    pmtContext = serializers.ChoiceField(choices=PmtContextChoices.choices, allow_blank=True, required=False)  # noqa: N815
+    qrType = serializers.ChoiceField(choices=QrTypeChoices.choices, default=QrTypeChoices.DYNAMIC, required=False)  # noqa: N815
+    amountType = serializers.ChoiceField(
+        choices=AmountTypeChoices.choices, default=AmountTypeChoices.FIXED, required=False
+    )  # noqa: N815
+    pmtContext = serializers.ChoiceField(
+        choices=PmtContextChoices.choices, default=PmtContextChoices.MOBILE_PAYMENT, required=False
+    )  # noqa: N815
 
 
 class MoneyDtoSerializer(serializers.Serializer):
@@ -27,27 +31,9 @@ class TtlDtoSerializer(serializers.Serializer):
 
 class VbPayeeQrExtensionDtoSerializer(serializers.Serializer):
     amount = MoneyDtoSerializer()
-    dba = serializers.CharField(
-        max_length=25,
-        min_length=2,
-        required=False,
-        help_text="Commercial name that will appear in client APP.",
-        default="TopAsig",
-    )
-    remittanceInfo4Payer = serializers.CharField(
-        max_length=35,
-        min_length=2,
-        required=False,
-        help_text="Payment destination.",
-        default="TopAsig",
-    )
-    creditorRef = serializers.CharField(
-        max_length=35, min_length=2, required=False, default="www.topasig.md", help_text="External payment reference."
-    )
 
 
 class VbPayeeQrDtoSerializer(serializers.Serializer):
-    header = VbPayeeQrHeaderDtoSerializer()
     extension = VbPayeeQrExtensionDtoSerializer()
 
 

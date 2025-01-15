@@ -18,4 +18,3 @@ class RCACompanyAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     readonly_fields = ("name", "idno")
     fields = ("name", "idno", "is_active", "logo")
-    list_editable = ("is_active", "logo")

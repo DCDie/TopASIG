@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 
-from apps.payment.constants import UnitsChoices
+from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeChoices, UnitsChoices
 
 
 class QrCodeService:
@@ -106,8 +106,17 @@ class QrCodeService:
         """
         url = f"{self.base_url}/api/v1/qr"
         headers = self.get_headers()
+        vb_payee_qr_dto["header"] = {
+            "qrType": QrTypeChoices.DYNAMIC,
+            "pmtContext": PmtContextChoices.MOBILE_PAYMENT,
+            "amountType": AmountTypeChoices.FIXED,
+        }
+        vb_payee_qr_dto["extension"]["dba"] = "www.topasig.md"
+        vb_payee_qr_dto["extension"]["remittanceInfo4Payer"] = "www.topasig.md"
+        vb_payee_qr_dto["extension"]["creditorRef"] = "www.topasig.md"
         vb_payee_qr_dto["extension"]["creditorAccount"] = {"iban": settings.ASIG_IBAN}
         vb_payee_qr_dto["extension"]["ttl"] = {"length": 15, "units": UnitsChoices.MM}
+
         try:
             response = requests.post(
                 url, json=vb_payee_qr_dto, headers=headers, params={"width": width, "height": height}
@@ -115,6 +124,8 @@ class QrCodeService:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
+            if hasattr(e.response, "text"):
+                raise ValidationError(f"Failed to create QR code: {e.response.text}") from e
             raise ValidationError(f"Failed to create QR code: {e}") from e
 
     def cancel_qr_code(self, qr_header_uuid):
