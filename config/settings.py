@@ -73,6 +73,8 @@ MIDDLEWARE = [
     "drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware",
 ]
 
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
 ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
