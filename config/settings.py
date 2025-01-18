@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.ensurance",
     "apps.common",
     "apps.payment",
+    "web",
     # Minio Cleanup
     "django_cleanup.apps.CleanupConfig",
 ]
