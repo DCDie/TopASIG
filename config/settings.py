@@ -248,8 +248,6 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # Minio
-DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
-STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
 MINIO_ENDPOINT = env.str("MINIO_ENDPOINT")
 MINIO_EXTERNAL_ENDPOINT = env.str("MINIO_EXTERNAL_ENDPOINT", default=MINIO_ENDPOINT)
 MINIO_ACCESS_KEY = env.str("MINIO_ACCESS_KEY")
@@ -258,9 +256,17 @@ MINIO_USE_HTTPS = env.bool("MINIO_STORAGE_USE_HTTPS", default=False)
 MINIO_EXTERNAL_ENDPOINT_USE_HTTPS = env.bool("MINIO_EXTERNAL_ENDPOINT_USE_HTTPS", default=MINIO_USE_HTTPS)
 MINIO_MEDIA_FILES_BUCKET = "media"
 MINIO_STATIC_FILES_BUCKET = "static"
-
+STORAGES = {
+    "default": {
+        "BACKEND": "django_minio_backend.models.MinioBackend",
+    },
+    "staticfiles": {
+        "BACKEND": "django_minio_backend.models.MinioBackendStatic",
+    },
+}
 MINIO_PUBLIC_BUCKETS = [
     MINIO_MEDIA_FILES_BUCKET,
+    MINIO_STATIC_FILES_BUCKET,
 ]
 
 # SMTP settings
