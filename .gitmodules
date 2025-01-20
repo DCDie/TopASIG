@@ -2,7 +2,3 @@
 	path = web
 	url = https://github.com/ExPressOnePro/asigurari.react
 	branch = master
-[submodule "web"]
-	path = asigurari.react
-	url = https://github.com/ExPressOnePro/asigurari.react.git
-	branch = master
