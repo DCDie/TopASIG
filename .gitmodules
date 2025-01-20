@@ -1,4 +1,4 @@
-[submodule "asigurari.react"]
+[submodule "web"]
 	path = web
-	url = https://github.com/ExPressOnePro/asigurari.react
+	url = https://github.com/ExPressOnePro/asigurari.react.git
 	branch = master
