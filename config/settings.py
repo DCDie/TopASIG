@@ -296,7 +296,7 @@ JAZZMIN_SETTINGS = {
     "site_title": "Top Asig",
     "site_header": "Top Asig",
     "welcome_sign": "Welcome to Top Asig",
-    "site_logo": "static/Logo.png",
+    "site_logo": "Logo.png",
     "navigation_expanded": True,
     "icons": {
         "auth.user": "fas fa-user",
