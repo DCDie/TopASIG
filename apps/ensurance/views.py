@@ -199,6 +199,15 @@ class RcaViewSet(GenericViewSet):
         # Call the SOAP method
         response = RcaExportServiceClient().calculate_green_card(serializer.validated_data)
 
+        # Link objects and append additional data
+        for insurer in response.InsurersPrime.InsurerPrimeRCAE:
+            rca_company, _ = RCACompany.objects.get_or_create(
+                idno=insurer.IDNO,
+                defaults={"name": insurer.Name},
+            )
+            insurer.is_active = rca_company.is_active
+            insurer.logo = rca_company.logo.url if rca_company.logo else None
+
         output_serializer = CalculateGreenCardOutputSerializer(data=serialize_object(response))
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)

@@ -31,20 +31,16 @@ class CalculateRCAInputSerializer(serializers.Serializer):
 
 
 class CalculateGreenCardInputSerializer(serializers.Serializer):
-    GreenCardZone = serializers.ChoiceField(choices=GreenCardZones.choices)
-    TermInsurance = serializers.ChoiceField(choices=TermInsurance.choices)
+    GreenCardZone = serializers.ChoiceField(choices=GreenCardZones.choices, required=True)
+    TermInsurance = serializers.ChoiceField(choices=TermInsurance.choices, required=True)
     IDNX = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
+        required=True,
         help_text="IDNP or IDNO",
         max_length=13,
         min_length=13,
     )
     VehicleRegistrationCertificateNumber = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
+        required=True,
         max_length=9,
         min_length=9,
         help_text="Vehicle Registration Certificate Number",
