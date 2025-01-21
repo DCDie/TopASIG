@@ -106,7 +106,7 @@ class MaibQrCodeService:
             "currency": vb_payee_qr_dto["extension"]["amount"]["currency"],
             "expiresAt": (datetime.utcnow() + timedelta(days=1)).isoformat(),
             "order_id": vb_payee_qr_dto["order_id"],
-            "description": "Payment for services on www.topasig.md",
+            "description": "Payment www.topasig.md",
             "redirectUrl": f"{self.domain}/payment/success",
             "callbackUrl": f"{self.domain}/payment/callback",
         }

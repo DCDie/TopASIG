@@ -1,5 +1,6 @@
-from base64 import b64decode
+from io import BytesIO
 
+import qrcode
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from drf_spectacular.types import OpenApiTypes
@@ -95,19 +96,36 @@ class QrCodeViewSet(GenericViewSet):
             instance = QrCode.objects.create()
             validated_data["order_id"] = str(instance.order_id)
             qrcode_service = MaibQrCodeService()
-            response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)["result"]
+            response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)
+            response_data = response_data["result"]
             instance.uuid = response_data["qrId"]
             instance.type = response_data.get("type")
             instance.url = response_data.get("url")
 
-            if response_data.get("qrAsImage"):
-                with SimpleUploadedFile(f"{instance.uuid}.png", b64decode(response_data.get("qrAsImage"))) as f:
-                    file = File.objects.create(
-                        external_id=str(instance.uuid),
-                        type=FileTypes.QR,
-                        file=f,
-                    )
-                    instance.file = file
+            # Generate qr code for url
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(instance.url)
+            qr.make(fit=True)
+
+            # Generate an image from the QR Code
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            # Save the image to an in-memory file
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")
+            buffer.seek(0)
+
+            file = File.objects.create(
+                external_id=instance.uuid,
+                file=SimpleUploadedFile(f"{instance.uuid}.png", buffer.read(), content_type="image/png"),
+                type=FileTypes.QR,
+            )
+            instance.file = file
             instance.save()
             return Response(QRCodeSerializer(instance).data, status=status.HTTP_201_CREATED)
 

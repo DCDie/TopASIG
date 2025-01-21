@@ -47,6 +47,8 @@ class CreatePayeeQrResponseSerializer(serializers.Serializer):
 
 
 class QRCodeSerializer(serializers.ModelSerializer):
+    qr_as_image = serializers.URLField(required=False, source="file.file.url")
+
     class Meta:
         model = QrCode
         fields = "__all__"
