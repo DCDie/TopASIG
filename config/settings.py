@@ -10,9 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from pathlib import Path
+
 import environ
 from django.utils.translation import gettext_lazy as _
-from pathlib import Path
 
 # Initialize environment variables
 env = environ.Env(SECRET_KEY=(str, "(╯▔皿▔)╯"), DEBUG=(bool, False))
@@ -152,7 +153,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Chisinau"
 
 USE_I18N = True
 
@@ -272,9 +273,7 @@ MINIO_PUBLIC_BUCKETS = [
     MINIO_STATIC_FILES_BUCKET,
 ]
 
-MINIO_PRIVATE_BUCKETS = [
-    MINIO_MEDIA_FILES_BUCKET
-]
+MINIO_PRIVATE_BUCKETS = [MINIO_MEDIA_FILES_BUCKET]
 
 # SMTP settings
 EMAIL_BACKEND = env.str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
