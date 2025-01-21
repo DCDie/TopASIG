@@ -76,8 +76,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    ports:
-      - "${SQL_PORT:-5432}:5432"
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -105,6 +103,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    ports:
-      - "9000:9000"
-      - "9001:9001"

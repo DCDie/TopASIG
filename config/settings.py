@@ -10,10 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
-
 import environ
 from django.utils.translation import gettext_lazy as _
+from pathlib import Path
 
 # Initialize environment variables
 env = environ.Env(SECRET_KEY=(str, "(╯▔皿▔)╯"), DEBUG=(bool, False))
@@ -130,7 +129,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -149,7 +147,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -160,7 +157,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -190,7 +186,6 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
 }
-
 
 # Spectacular settings
 SPECTACULAR_SETTINGS = {
@@ -272,9 +267,13 @@ STORAGES = {
         "BACKEND": "django_minio_backend.models.MinioBackendStatic",
     },
 }
+
 MINIO_PUBLIC_BUCKETS = [
-    MINIO_MEDIA_FILES_BUCKET,
     MINIO_STATIC_FILES_BUCKET,
+]
+
+MINIO_PRIVATE_BUCKETS = [
+    MINIO_MEDIA_FILES_BUCKET
 ]
 
 # SMTP settings
