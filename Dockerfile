@@ -35,6 +35,7 @@ COPY ./locale /usr/app/locale
 COPY ./manage.py /usr/app
 COPY ./gunicorn.conf.py /usr/app
 COPY ./web/static /usr/app/web/static
+COPY ./static /usr/app/static
 COPY ./web/apps.py /usr/app/web
 COPY .env /usr/app
 COPY stamp.png /usr/app
