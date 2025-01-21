@@ -38,8 +38,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    ports:
-      - "8000:8000"
 
   celery-worker:
     build: .
@@ -78,6 +76,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "${SQL_PORT:-5432}:5432"
 
   rabbitmq:
     image: rabbitmq:3-management

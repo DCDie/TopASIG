@@ -1,11 +1,9 @@
 from base64 import b64decode
 
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from requests import HTTPError
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -14,12 +12,10 @@ from rest_framework.viewsets import GenericViewSet
 
 from apps.ensurance.constants import FileTypes
 from apps.ensurance.models import File
-from apps.payment.constants import StatusChoices
+from apps.payment.mia_maib import MaibQrCodeService
 from apps.payment.models import QrCode
-from apps.payment.qr import QrCodeService
 from apps.payment.serializers import (
-    CreatePayeeQrResponseSerializer,
-    GetQrStatusResponseSerializer,
+    QRCodeSerializer,
     SizeSerializer,
     VbPayeeQrDtoSerializer,
 )
@@ -45,7 +41,7 @@ class QrCodeViewSet(GenericViewSet):
 
     @extend_schema(
         request=VbPayeeQrDtoSerializer,
-        responses=CreatePayeeQrResponseSerializer,
+        responses=QRCodeSerializer,
         parameters=[
             OpenApiParameter(
                 name="width",
@@ -94,33 +90,28 @@ class QrCodeViewSet(GenericViewSet):
         query_serializer = SizeSerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
-        qrcode_service = QrCodeService()
-        response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)
-
         with transaction.atomic():
             # Create the QR code and return the response
-            instance = QrCode.objects.create(
-                uuid=response_data.get("qrHeaderUUID"),
-                type=validated_data.get("header").get("qrType"),
-                pmt_context=validated_data.get("header").get("pmtContext"),
-                url=response_data.get("qrAsText"),
-                status=StatusChoices.ACTIVE,
-            )
-            with SimpleUploadedFile(f"{instance.uuid}.png", b64decode(response_data.get("qrAsImage"))) as f:
-                file = File.objects.create(
-                    external_id=str(instance.uuid),
-                    type=FileTypes.QR,
-                    file=f,
-                )
-                instance.file = file
-                instance.save()
+            instance = QrCode.objects.create()
+            validated_data["order_id"] = str(instance.order_id)
+            qrcode_service = MaibQrCodeService()
+            response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)["result"]
+            instance.uuid = response_data["qrId"]
+            instance.type = response_data.get("type")
+            instance.url = response_data.get("url")
 
-            response_data["qrCode"] = instance.pk
-            response_serializer = CreatePayeeQrResponseSerializer(data=response_data)
-            response_serializer.is_valid(raise_exception=True)
-            return Response(response_serializer.data, status=status.HTTP_200_OK)
+            if response_data.get("qrAsImage"):
+                with SimpleUploadedFile(f"{instance.uuid}.png", b64decode(response_data.get("qrAsImage"))) as f:
+                    file = File.objects.create(
+                        external_id=str(instance.uuid),
+                        type=FileTypes.QR,
+                        file=f,
+                    )
+                    instance.file = file
+            instance.save()
+            return Response(QRCodeSerializer(instance).data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(responses=GetQrStatusResponseSerializer)
+    @extend_schema(responses=QRCodeSerializer)
     @action(detail=True, methods=["get"], url_path="status")
     def get_status(self, request, uuid: str):
         """
@@ -144,16 +135,12 @@ class QrCodeViewSet(GenericViewSet):
             HTTPError: If there is an issue when attempting to fetch the status from
                 the external service.
         """
-        qr_code = get_object_or_404(QrCode, uuid=uuid)
-        # Request the API to get the status of the QR code
-        qrcode_service = QrCodeService()
-        try:
-            response_data = qrcode_service.get_qr_status(qr_code.uuid)
-            # Update the status of the QR code in the database
-            if settings.DEBUG:
-                response_data["status"] = qr_code.status
-            qr_code.status = response_data.get("status")
-            qr_code.save()
-            return Response(response_data, status=status.HTTP_200_OK)
-        except HTTPError as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        instance = get_object_or_404(QrCode, uuid=uuid)
+        qrcode_service = MaibQrCodeService()
+        response_data = qrcode_service.get_qr_status(uuid)
+
+        # Update the status of the QR code in the database
+        if response_data["result"]["status"] != instance.status:
+            instance.status = response_data["result"]["status"]
+            instance.save()
+        return Response(QRCodeSerializer(instance).data)

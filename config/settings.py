@@ -74,7 +74,7 @@ MIDDLEWARE = [
     "drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware",
 ]
 
-# CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 CSRF_COOKIE_DOMAIN = env.str("CSRF_COOKIE_DOMAIN", default=None)
 CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=False)
 
@@ -221,9 +221,14 @@ ASIG_IBAN = env.str("ASIG_IBAN")
 
 # Victoria settings
 VICTORIA_BASE_URL = env.str("VICTORIA_BASE_URL")
-MIA_BASE_URL = env.str("MIA_BASE_URL")
-MIA_USERNAME = env.str("MIA_USERNAME")
-MIA_PASSWORD = env.str("MIA_PASSWORD")
+VICTORIA_MIA_BASE_URL = env.str("VICTORIA_MIA_BASE_URL", "")
+VICTORIA_MIA_USERNAME = env.str("VICTORIA_MIA_USERNAME", "")
+VICTORIA_MIA_PASSWORD = env.str("VICTORIA_MIA_PASSWORD", "")
+
+# Maib settings
+MAIB_MIA_BASE_URL = env.str("MAIB_MIA_BASE_URL")
+MAIB_CLIENT_ID = env.str("MAIB_CLIENT_ID")
+MAIB_CLIENT_SECRET = env.str("MAIB_CLIENT_SECRET")
 
 # Celery settings
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL")

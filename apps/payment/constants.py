@@ -2,9 +2,9 @@ from django.db import models
 
 
 class QrTypeChoices(models.TextChoices):
-    DYNAMIC = "DYNM", "Dynamic"
-    STATIC = "STAT", "Static"
-    HYBRID = "HYBR", "Hybrid"
+    DYNAMIC = "Dynamic", "Dynamic"
+    STATIC = "Static", "Static"
+    HYBRID = "Hybrid", "Hybrid"
 
 
 class AmountTypeChoices(models.TextChoices):

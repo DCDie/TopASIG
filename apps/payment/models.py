@@ -1,4 +1,4 @@
-import uuid
+import uuid as uuid_lib
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -11,9 +11,10 @@ class QrCode(models.Model):
     Model representing a Payee-presented QR Code.
     """
 
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, help_text="UUID of the QR Code")
+    uuid = models.UUIDField(default=uuid_lib.uuid4, editable=False, unique=True, help_text="UUID of the QR Code")
+    order_id = models.UUIDField(default=uuid_lib.uuid4, editable=False, help_text="UUID of the order", null=True)
     type = models.CharField(
-        max_length=4, choices=QrTypeChoices.choices, default=QrTypeChoices.DYNAMIC, help_text="Type of the QR Code"
+        max_length=7, choices=QrTypeChoices.choices, default=QrTypeChoices.DYNAMIC, help_text="Type of the QR Code"
     )
     amount_type = models.CharField(
         max_length=10,

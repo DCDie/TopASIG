@@ -2,8 +2,8 @@ from celery import shared_task
 from django.db import transaction
 
 from apps.payment.constants import StatusChoices
+from apps.payment.mia_maib import MaibQrCodeService
 from apps.payment.models import QrCode
-from apps.payment.qr import QrCodeService
 
 
 @shared_task
@@ -17,12 +17,12 @@ def update_qr_status():
     }
 
     for qr in queryset:
-        qrcode_service = QrCodeService()
+        qrcode_service = MaibQrCodeService()
         try:
             with transaction.atomic():
-                response_data = qrcode_service.get_qr_status(qr.uuid)
+                response_data = qrcode_service.get_qr_status(str(qr.uuid))
                 # Update the status of the QR code in the database
-                status = response_data.get("status")
+                status = response_data["result"].get("status")
                 if status and status != qr.status:
                     qr.status = status
                     qr.save()

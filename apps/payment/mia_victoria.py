@@ -7,7 +7,7 @@ from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeChoices, UnitsChoices
 
 
-class QrCodeService:
+class VictoriaQrCodeService:
     """
     Manages interactions with the Victoria API for creating, managing, and retrieving information
     on payee-presented QR codes.
@@ -31,9 +31,9 @@ class QrCodeService:
     """
 
     def __init__(self):
-        self.base_url = settings.MIA_BASE_URL.rstrip("/")
-        self.username = settings.MIA_USERNAME
-        self.password = settings.MIA_PASSWORD
+        self.base_url = settings.VICTORIA_MIA_BASE_URL.rstrip("/")
+        self.username = settings.VICTORIA_MIA_USERNAME
+        self.password = settings.VICTORIA_MIA_PASSWORD
         self.domain = settings.DOMAIN
         self.token = None
         self.token_expires_at = datetime.utcnow()

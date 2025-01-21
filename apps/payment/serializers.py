@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeChoices, StatusChoices, UnitsChoices
+from apps.payment.models import QrCode
 
 
 class VbPayeeQrHeaderDtoSerializer(serializers.Serializer):
@@ -43,6 +44,12 @@ class CreatePayeeQrResponseSerializer(serializers.Serializer):
     qrAsText = serializers.URLField(required=False)  # noqa: N815
     qrAsImage = serializers.CharField(required=False)  # noqa: N815
     qrCode = serializers.IntegerField(required=False)
+
+
+class QRCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QrCode
+        fields = "__all__"
 
 
 class PaymentDtoSerializer(serializers.Serializer):
