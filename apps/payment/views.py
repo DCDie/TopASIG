@@ -1,10 +1,12 @@
 from io import BytesIO
 
 import qrcode
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
+from PIL import Image
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -102,22 +104,27 @@ class QrCodeViewSet(GenericViewSet):
             instance.type = response_data.get("type")
             instance.url = response_data.get("url")
 
-            # Generate qr code for url
+            # Create the QR Code
             qr = qrcode.QRCode(
                 version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                error_correction=qrcode.constants.ERROR_CORRECT_H,
                 box_size=10,
-                border=4,
+                border=2,
             )
             qr.add_data(instance.url)
             qr.make(fit=True)
-
-            # Generate an image from the QR Code
-            img = qr.make_image(fill_color="black", back_color="white")
-
-            # Save the image to an in-memory file
+            qr_code_img = qr.make_image(fill_color="orange", back_color="white").convert("RGB")
+            logo = Image.open(settings.BASE_DIR / "static" / "mia.png")
+            logo = logo.resize((120, 120))
+            qr_width, qr_height = qr_code_img.size
+            logo_position = (
+                (qr_width - logo.size[0]) // 2,
+                (qr_height - logo.size[1]) // 2,
+            )
+            qr_code_img.paste(logo, logo_position, mask=logo)
+            qr_code_img.show()
             buffer = BytesIO()
-            img.save(buffer, format="PNG")
+            qr_code_img.save(buffer, format="PNG")
             buffer.seek(0)
 
             file = File.objects.create(
@@ -127,7 +134,7 @@ class QrCodeViewSet(GenericViewSet):
             )
             instance.file = file
             instance.save()
-            return Response(QRCodeSerializer(instance).data, status=status.HTTP_201_CREATED)
+        return Response(QRCodeSerializer(instance).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(responses=QRCodeSerializer)
     @action(detail=True, methods=["get"], url_path="status")
