@@ -76,6 +76,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - 5432:5432
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -90,6 +92,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - 5672:5672
 
   minio:
     image: bitnami/minio:latest
@@ -103,3 +107,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    ports:
+      - 9000:9000
+      - 9001:9001

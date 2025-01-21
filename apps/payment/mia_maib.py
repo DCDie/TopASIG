@@ -104,7 +104,7 @@ class MaibQrCodeService:
             "amountType": AmountTypeChoices.FIXED,
             "amount": vb_payee_qr_dto["extension"]["amount"]["sum"],
             "currency": vb_payee_qr_dto["extension"]["amount"]["currency"],
-            "expiresAt": (datetime.utcnow() + timedelta(minutes=15)).isoformat(),
+            "expiresAt": (datetime.now() + timedelta(minutes=15)).isoformat(),
             "order_id": vb_payee_qr_dto["order_id"],
             "description": "Payment www.topasig.md",
             "redirectUrl": f"{self.domain}/payment/success",
