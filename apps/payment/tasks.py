@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from celery import shared_task
 from django.db import transaction
+from django.utils import timezone
 
 from apps.payment.constants import StatusChoices
 from apps.payment.mia_maib import MaibQrCodeService
@@ -29,7 +30,7 @@ def update_qr_status():
                     qr.status = status
                     qr.save()
                     data["updated"].append(qr.pk)
-                elif qr.created_at + timedelta(minutes=15) < datetime.now():
+                elif qr.created_at + timedelta(minutes=15) < timezone.now():
                     qr.status = StatusChoices.EXPIRED
                     qr.save()
                     data["updated"].append(qr.pk)
@@ -37,7 +38,7 @@ def update_qr_status():
                     data["not_changed"].append(qr.pk)
         except Exception:  # noqa BLE001
             data["failed"].append(qr.pk)
-            if qr.created_at + timedelta(minutes=15) < datetime.now():
+            if qr.created_at + timedelta(minutes=15) < timezone.now():
                 qr.status = StatusChoices.EXPIRED
                 qr.save()
                 data["updated"].append(qr.pk)
