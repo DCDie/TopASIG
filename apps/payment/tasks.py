@@ -37,5 +37,9 @@ def update_qr_status():
                     data["not_changed"].append(qr.pk)
         except Exception:  # noqa BLE001
             data["failed"].append(qr.pk)
+            if qr.created_at + timedelta(minutes=15) < datetime.now():
+                qr.status = StatusChoices.EXPIRED
+                qr.save()
+                data["updated"].append(qr.pk)
 
     return data
