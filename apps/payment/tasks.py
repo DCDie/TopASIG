@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from celery import shared_task
 from django.db import transaction
 
@@ -25,6 +27,10 @@ def update_qr_status():
                 status = response_data["result"].get("status")
                 if status and status != qr.status:
                     qr.status = status
+                    qr.save()
+                    data["updated"].append(qr.pk)
+                elif qr.created_at + timedelta(minutes=15) < datetime.now():
+                    qr.status = StatusChoices.EXPIRED
                     qr.save()
                     data["updated"].append(qr.pk)
                 else:
