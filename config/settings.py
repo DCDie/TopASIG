@@ -129,6 +129,7 @@ DATABASES = {
         "CONN_MAX_AGE": env.int("SQL_CONN_MAX_AGE", 600),
     }
 }
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000000  # 100 MB
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -247,7 +248,7 @@ CELERY_RESULT_BACKEND = "django-db"
 CELERY_BEAT_SCHEDULE = {
     "update_qr_status": {
         "task": "apps.payment.tasks.update_qr_status",
-        "schedule": 10,  # every 10 seconds
+        "schedule": 3 * 60,  # 3 minutes
     },
 }
 
