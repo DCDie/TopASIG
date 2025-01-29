@@ -34,7 +34,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      rabbitmq:
+      redis:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -71,6 +71,8 @@ services:
       POSTGRES_USER: ${SQL_USER}
       POSTGRES_PASSWORD: ${SQL_PASSWORD}
       POSTGRES_DB: ${SQL_DB}
+    volumes:
+      - data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "${SQL_USER}" ]
       interval: 10s
@@ -79,21 +81,15 @@ services:
     ports:
       - 5432:5432
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    hostname: rabbit
-    env_file:
-      - .env
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbit
-      RABBITMQ_DEFAULT_PASS: rabbit
+  redis:
+    image: redis:latest
     healthcheck:
-      test: [ "CMD", "rabbitmqctl", "status" ]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
     ports:
-      - 5672:5672
+      - 6379:6379
 
   minio:
     image: bitnami/minio:latest
@@ -110,3 +106,9 @@ services:
     ports:
       - 9000:9000
       - 9001:9001
+
+
+volumes:
+  data:
+  minio_data:
+
