@@ -1,5 +1,8 @@
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.http import HttpResponse
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -8,7 +11,6 @@ from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 from zeep.helpers import serialize_object
 
-from apps.ensurance.constants import ContractType
 from apps.ensurance.helpers import insert_image_into_pdf
 from apps.ensurance.models import File, RCACompany
 from apps.ensurance.rca import RcaExportServiceClient
@@ -20,8 +22,9 @@ from apps.ensurance.serializers import (
     GetFileRequestSerializer,
     GreenCardDocumentModelSerializer,
     SaveRcaDocumentSerializer,
+    SendFileRequestSerializer,
 )
-from apps.ensurance.tasks import download_rcai_document
+from apps.ensurance.tasks import download_rcae_document, download_rcai_document
 
 
 class RcaViewSet(GenericViewSet):
@@ -255,6 +258,12 @@ class RcaViewSet(GenericViewSet):
             # Call the SOAP method
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
+            if isinstance(response, bytes):
+                DocumentId = response.decode().split("</Id>")[0].split("<Id>")[1]
+            else:
+                DocumentId = response.Response["Id"]
+            download_rcae_document.apply_async(args=[DocumentId])
+
             return Response({"DocumentId": response.Response["Id"]}, status=status.HTTP_200_OK)
 
     @extend_schema(responses={200: Serializer})
@@ -323,10 +332,49 @@ class RcaViewSet(GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         file = File.objects.filter(external_id=pk).first()
-        if file and serializer.validated_data["ContractType"] == ContractType.RCAI:
+        if file:
             return HttpResponse(file.file.read(), content_type="application/pdf")
 
         # Call the SOAP method to get the file in case it does not exist in the database
         response = RcaExportServiceClient().get_file(DocumentId=pk, **serializer.validated_data)
         content = insert_image_into_pdf(response.FileContent)
         return HttpResponse(content, content_type="application/pdf")
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="send-file",
+        serializer_class=SendFileRequestSerializer,
+    )
+    def send_file(self, request, pk: str):
+        """
+        Sends a file to the user by email.
+
+        This method validates the incoming request data, fetches the file from the database, and sends it to the user
+        via email. The file is attached to the email, and the user is notified about the successful operation.
+
+        Parameters:
+            request: The HTTP request object containing the data required for sending the file.
+            pk: The primary key of the file to be sent.
+
+        Returns:
+            Response: An HTTP response indicating the status of the operation.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        file = File.objects.filter(external_id=pk).first()
+        if not file:
+            return Response({"detail": "File not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Send the file to the user by email
+        message = EmailMultiAlternatives(
+            subject=_("Your file"),
+            body=_("Please find the attached file."),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[serializer.validated_data["email"]],
+        )
+        message.attach(file.file.name, file.file.read(), "application/pdf")
+        message.send()
+
+        return Response({"detail": "File sent successfully."}, status=status.HTTP_200_OK)

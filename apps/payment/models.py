@@ -37,6 +37,7 @@ class QrCode(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     file = models.ForeignKey("ensurance.File", on_delete=models.SET_NULL, null=True, blank=True)
+    data = models.JSONField(default=dict, help_text="Data associated with the QR Code")
 
     def __str__(self):
         return f"QR Code {self.uuid} - {self.status}"

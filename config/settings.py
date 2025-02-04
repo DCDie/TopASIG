@@ -310,3 +310,6 @@ JAZZMIN_SETTINGS = {
         "django_celery_results.GroupResult": "fas fa-tasks",
     },
 }
+
+# Donaris
+DONARIS_BASE_URL = env.str("DONARIS_BASE_URL")
