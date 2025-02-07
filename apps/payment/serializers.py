@@ -36,6 +36,7 @@ class VbPayeeQrExtensionDtoSerializer(serializers.Serializer):
 
 class VbPayeeQrDtoSerializer(serializers.Serializer):
     extension = VbPayeeQrExtensionDtoSerializer()
+    data = serializers.JSONField(required=False)
 
 
 class CreatePayeeQrResponseSerializer(serializers.Serializer):
