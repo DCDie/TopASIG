@@ -88,6 +88,7 @@ class QrCodeViewSet(GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
+        data = validated_data.pop("data", {})
 
         # Validate query parameters
         query_serializer = SizeSerializer(data=request.query_params)
@@ -96,7 +97,7 @@ class QrCodeViewSet(GenericViewSet):
         with transaction.atomic():
             # Create the QR code and return the response
             instance = QrCode.objects.create()
-            instance.data = validated_data.pop("data", {})
+            instance.data = data
             validated_data["order_id"] = str(instance.order_id)
             qrcode_service = MaibQrCodeService()
             response_data = qrcode_service.create_qr_code(validated_data, **query_serializer.validated_data)
