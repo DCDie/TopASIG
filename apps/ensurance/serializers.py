@@ -135,6 +135,12 @@ class SaveRcaDocumentSerializer(serializers.Serializer):
         slug_field="uuid",
     )
 
+    @staticmethod
+    def validate_StartDate(value):  # noqa: N802X
+        if value < value.today():
+            raise serializers.ValidationError("StartDate must be in the future")
+        return value
+
 
 class GreenCardDocumentModelSerializer(serializers.Serializer):
     Company = CompanyModelSerializer(required=False)
@@ -155,6 +161,12 @@ class GreenCardDocumentModelSerializer(serializers.Serializer):
         slug_field="uuid",
     )
     PolicyNumber = serializers.CharField(required=False, allow_blank=True)
+
+    @staticmethod
+    def validate_StartDate(value):  # noqa: N802
+        if value < value.today():
+            raise serializers.ValidationError("StartDate must be in the future")
+        return value
 
 
 class GetFileRequestSerializer(serializers.Serializer):
