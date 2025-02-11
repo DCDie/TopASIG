@@ -53,14 +53,6 @@ class OperationModes(models.TextChoices):
     RENTACAR = "5", _("RentACar")
 
 
-class OperationModesStrings(models.TextChoices):
-    USUAL = "Usual", _("Usual")
-    MINIBUS = "Minibus", _("Minibus")
-    INTERCITYBUS = "IntercityBus", _("IntercityBus")
-    TAXI = "Taxi", _("Taxi")
-    RENTACAR = "RentACar", _("RentACar")
-
-
 class PaymentModes(models.TextChoices):
     CASH = "Cash", _("Cash")
     TRANSFER = "Transfer", _("Transfer")

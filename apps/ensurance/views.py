@@ -160,8 +160,19 @@ class RcaViewSet(GenericViewSet):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
+            operating_modes = serializer.validated_data.pop("OperatingModes")
+
+            operating_modes_strings = {
+                "1": "Usual",
+                "2": "Minibus",
+                "3": "IntercityBus",
+                "4": "Taxi",
+                "5": "RentACar",
+            }
+
             qr_code = serializer.validated_data.pop("qrCode")
             serializer.validated_data["PaymentDate"] = qr_code.updated_at.date()
+            serializer.validated_data["OperatingMode"] = operating_modes_strings[str(operating_modes)]
             qr_code.is_used = True
             qr_code.save()
 
