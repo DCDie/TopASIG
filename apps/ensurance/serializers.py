@@ -128,7 +128,7 @@ class SaveRcaDocumentSerializer(serializers.Serializer):
         choices=PossessionBase.choices, default=PossessionBase.PROPERTY, required=False
     )
     DocumentPossessionBaseDate = serializers.DateField(required=False, default="2000-01-01")
-    OperatingModes = serializers.ChoiceField(choices=OperationModes.choice, default=OperationModes.USUAL)
+    OperatingModes = serializers.ChoiceField(choices=OperationModes.choices, default=OperationModes.USUAL)
     qrCode = serializers.SlugRelatedField(
         help_text="QR Code UUID",
         queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),

@@ -15,6 +15,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from apps.ensurance.constants import FileTypes
 from apps.ensurance.models import File
+from apps.payment.constants import StatusChoices
 from apps.payment.mia_maib import MaibQrCodeService
 from apps.payment.models import QrCode
 from apps.payment.serializers import (
@@ -167,7 +168,7 @@ class QrCodeViewSet(GenericViewSet):
         response_data = qrcode_service.get_qr_status(uuid)
 
         # Update the status of the QR code in the database
-        if response_data["result"]["status"] != instance.status:
+        if response_data["result"]["status"] != instance.status and response_data["result"]["status"] != StatusChoices.ACTIVE:
             instance.status = response_data["result"]["status"]
             instance.save()
         return Response(QRCodeSerializer(instance).data)
