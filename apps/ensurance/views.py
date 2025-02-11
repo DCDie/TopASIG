@@ -183,7 +183,13 @@ class RcaViewSet(GenericViewSet):
             else:
                 DocumentId = response.Response["Id"]
             download_rcai_document.apply_async(args=[DocumentId])
-            return Response({"DocumentId": DocumentId}, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "DocumentId": DocumentId,
+                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{DocumentId}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
+                },
+                status=status.HTTP_200_OK,
+            )
 
     @extend_schema(responses={200: CalculateGreenCardOutputSerializer})
     @action(
@@ -275,7 +281,13 @@ class RcaViewSet(GenericViewSet):
                 DocumentId = response.Response["Id"]
             download_rcae_document.apply_async(args=[DocumentId])
 
-            return Response({"DocumentId": response.Response["Id"]}, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "DocumentId": DocumentId,
+                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{DocumentId}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
+                },
+                status=status.HTTP_200_OK
+            )
 
     @extend_schema(responses={200: Serializer})
     @action(
