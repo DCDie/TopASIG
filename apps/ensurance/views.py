@@ -243,7 +243,7 @@ class RcaViewSet(GenericViewSet):
         data = serialize_object(response)
         data["insuranceNumber"] = insurance_data["insuranceNumber"]
 
-        output_serializer = CalculateGreenCardOutputSerializer(data=serialize_object(response))
+        output_serializer = CalculateGreenCardOutputSerializer(data=data)
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
@@ -301,7 +301,7 @@ class RcaViewSet(GenericViewSet):
                     "DocumentId": DocumentId,
                     "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{DocumentId}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
                 },
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
 
     @extend_schema(responses={200: Serializer})
