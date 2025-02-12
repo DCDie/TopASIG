@@ -92,6 +92,7 @@ class CalculateGreenCardOutputSerializer(serializers.Serializer):
     VehicleCategory = serializers.ChoiceField(
         allow_null=True, allow_blank=True, choices=GreenCardVehicleCategories.choices
     )
+    insuranceNumber = serializers.CharField(allow_null=True, allow_blank=True)
 
 
 class CompanyModelSerializer(serializers.Serializer):
