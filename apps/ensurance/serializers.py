@@ -149,7 +149,6 @@ class GreenCardDocumentModelSerializer(serializers.Serializer):
     InsuredJuridicalPerson = JuridicalPersonModelSerializer(required=False)
     InsuredVehicle = VehicleModelSerializer()
     StartDate = serializers.DateField()
-    PaymentDate = serializers.DateField()
     TermInsurance = serializers.ChoiceField(choices=TermInsurance.choices)
     PossessionBase = serializers.ChoiceField(choices=PossessionBase.choices)
     DocumentPossessionBaseDate = serializers.DateTimeField(allow_null=True)
@@ -161,7 +160,6 @@ class GreenCardDocumentModelSerializer(serializers.Serializer):
         queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),
         slug_field="uuid",
     )
-    PolicyNumber = serializers.CharField(required=False, allow_blank=True)
 
     @staticmethod
     def validate_StartDate(value):  # noqa: N802

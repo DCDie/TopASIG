@@ -287,6 +287,8 @@ class RcaViewSet(GenericViewSet):
             qr_code.is_used = True
             qr_code.save()
 
+            serializer.validated_data["PaymentDate"] = qr_code.updated_at.date()
+
             # Call the SOAP method
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
