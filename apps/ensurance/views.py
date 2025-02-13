@@ -1,4 +1,3 @@
-import requests
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
@@ -220,17 +219,6 @@ class RcaViewSet(GenericViewSet):
         # Call the SOAP method
         response = RcaExportServiceClient().calculate_green_card(serializer.validated_data)
 
-        # Get Policy insurance data
-        insurance_request = requests.request(
-            "get",
-            "https://aoam.cnam.gov.md:28002/aoam/medic/{}".format(serializer.validated_data["IDNX"]),
-            verify=False,
-            headers={"Origin": "https://aoam.cnam.gov.md:28001"},
-        )
-
-        insurance_request.raise_for_status()
-        insurance_data = insurance_request.json()
-
         # Link objects and append additional data
         for insurer in response.InsurersPrime.InsurerPrimeRCAE:
             rca_company, _ = RCACompany.objects.get_or_create(
@@ -241,7 +229,6 @@ class RcaViewSet(GenericViewSet):
             insurer.logo = rca_company.logo.url if rca_company.logo else None
 
         data = serialize_object(response)
-        data["insuranceNumber"] = insurance_data["insuranceNumber"]
 
         output_serializer = CalculateGreenCardOutputSerializer(data=data)
         output_serializer.is_valid(raise_exception=True)

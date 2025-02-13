@@ -189,7 +189,9 @@ class RcaExportServiceClient:
         Employee = self.client.get_type("ns0:EmployeeInput")(IDNP=IDNP)
         RequestType = self.client.get_type("ns0:GreenCardDocumentModel")
         document_request["Employee"] = Employee
-        document_request = RequestType(**document_request, PaymentMode=PaymentModes.TRANSFER)
+        document_request = RequestType(
+            **document_request, PaymentMode=PaymentModes.TRANSFER, PolicyNumber=zeep.xsd.SkipValue
+        )
 
         try:
             self.authenticate()
