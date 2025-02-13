@@ -160,6 +160,7 @@ class GreenCardDocumentModelSerializer(serializers.Serializer):
         queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),
         slug_field="uuid",
     )
+    PolicyNumber = serializers.CharField()
 
     @staticmethod
     def validate_StartDate(value):  # noqa: N802
