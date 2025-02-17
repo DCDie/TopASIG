@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.http import HttpResponse
+from django.templatetags.static import static
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -11,6 +12,7 @@ from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 from zeep.helpers import serialize_object
 
+from apps.ensurance.donaris import MedicinaAPI
 from apps.ensurance.helpers import insert_image_into_pdf
 from apps.ensurance.models import File, RCACompany
 from apps.ensurance.rca import RcaExportServiceClient
@@ -75,61 +77,17 @@ class RcaViewSet(GenericViewSet):
         # Call the SOAP method
         response = RcaExportServiceClient().calculate_rca(serializer.validated_data)
 
-        # TODO: Use this when BNM will fix RCA API
-        # # Validate and serialize the response
-        # output_serializer = CalculateRCAOutputSerializer(data=serialize_object(response))
-        # output_serializer.is_valid(raise_exception=True)
-        # return Response(output_serializer.data, status=status.HTTP_200_OK)
+        # Get settings for RCA companies and link them to the response
+        rca_companies = RCACompany.objects.all()
+        rca_companies = {company.idno: company for company in rca_companies}
+
+        for insurer in response.InsurersPrime.InsurerPrimeRCAI:
+            company = rca_companies.get(insurer.IDNO)
+            insurer["is_active"] = company.is_active if company else False
+            insurer["logo"] = company.logo.url if company else static("public/Logo.png")
 
         # Validate and serialize the response
-        import xml.etree.ElementTree as ET
-
-        namespaces = {
-            "soap": "http://schemas.xmlsoap.org/soap/envelope/",
-            "ns": "http://172.30.255.11:5368/RcaExportService.asmx",
-        }
-        root = ET.fromstring(response.text)
-
-        # Extract data into a dictionary
-        response_data = {}
-        calculate_result = root.find(".//ns:CalculateRCAIPremiumResult", namespaces)
-
-        if calculate_result is not None:
-            if calculate_result.find("ns:IsSuccess", namespaces).text.lower() == "false":
-                response_data["detail"] = calculate_result.find("ns:ErrorMessage", namespaces).text
-                return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
-            response_data["InsurersPrime"] = {"InsurerPrimeRCAI": []}
-            for insurer in calculate_result.findall(".//ns:InsurerPrimeRCAI", namespaces):
-                rca_company, _ = RCACompany.objects.get_or_create(
-                    idno=insurer.find("ns:IDNO", namespaces).text,
-                    defaults={"name": insurer.find("ns:Name", namespaces).text},
-                )
-                response_data["InsurersPrime"]["InsurerPrimeRCAI"].append(
-                    {
-                        "Name": insurer.find("ns:Name", namespaces).text,
-                        "IDNO": insurer.find("ns:IDNO", namespaces).text,
-                        "PrimeSum": float(insurer.find("ns:PrimeSum", namespaces).text),
-                        "PrimeSumMDL": float(insurer.find("ns:PrimeSum", namespaces).text),
-                        "is_active": rca_company.is_active,
-                        "logo": rca_company.logo.url if rca_company.logo else None,
-                    }
-                )
-            response_data["BonusMalusClass"] = int(calculate_result.find("ns:BonusMalusClass", namespaces).text)
-            response_data["IsSuccess"] = calculate_result.find("ns:IsSuccess", namespaces).text.lower() == "true"
-            response_data["Territory"] = calculate_result.find("ns:Territory", namespaces).text
-            response_data["PersonFirstName"] = calculate_result.find("ns:PersonFirstName", namespaces).text
-            response_data["PersonLastName"] = calculate_result.find("ns:PersonLastName", namespaces).text
-            response_data["VehicleMark"] = calculate_result.find("ns:VehicleMark", namespaces).text
-            response_data["VehicleModel"] = calculate_result.find("ns:VehicleModel", namespaces).text
-            response_data["VehicleRegistrationNumber"] = calculate_result.find(
-                "ns:VehicleRegistrationNumber", namespaces
-            ).text
-            response_data["AgeUnder23"] = calculate_result.find("ns:AgeUnder23", namespaces).text.lower() == "true"
-            response_data["ExperienceUnder2"] = (
-                calculate_result.find("ns:ExperienceUnder2", namespaces).text.lower() == "true"
-            )
-
-        output_serializer = CalculateRCAOutputSerializer(data=response_data)
+        output_serializer = CalculateRCAOutputSerializer(data=serialize_object(response))
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
@@ -178,15 +136,12 @@ class RcaViewSet(GenericViewSet):
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
-            if isinstance(response, bytes):
-                DocumentId = response.decode().split("</Id>")[0].split("<Id>")[1]
-            else:
-                DocumentId = response.Response["Id"]
-            download_rcai_document.apply_async(args=[DocumentId])
+            document_id = response.Response["Id"]
+            download_rcai_document.apply_async(args=[document_id])
             return Response(
                 {
-                    "DocumentId": DocumentId,
-                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{DocumentId}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
+                    "DocumentId": document_id,
+                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
                 },
                 status=status.HTTP_200_OK,
             )
@@ -219,18 +174,16 @@ class RcaViewSet(GenericViewSet):
         # Call the SOAP method
         response = RcaExportServiceClient().calculate_green_card(serializer.validated_data)
 
-        # Link objects and append additional data
+        # Get settings for RCA companies and link them to the response
+        rca_companies = RCACompany.objects.all()
+        rca_companies = {company.idno: company for company in rca_companies}
+
         for insurer in response.InsurersPrime.InsurerPrimeRCAE:
-            rca_company, _ = RCACompany.objects.get_or_create(
-                idno=insurer.IDNO,
-                defaults={"name": insurer.Name},
-            )
-            insurer.is_active = rca_company.is_active
-            insurer.logo = rca_company.logo.url if rca_company.logo else None
+            company = rca_companies.get(insurer.IDNO)
+            insurer["is_active"] = company.is_active if company else False
+            insurer["logo"] = company.logo.url if company else static("public/Logo.png")
 
-        data = serialize_object(response)
-
-        output_serializer = CalculateGreenCardOutputSerializer(data=data)
+        output_serializer = CalculateGreenCardOutputSerializer(data=serialize_object(response))
         output_serializer.is_valid(raise_exception=True)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
@@ -274,24 +227,30 @@ class RcaViewSet(GenericViewSet):
             qr_code.is_used = True
             qr_code.save()
 
-            serializer.validated_data["PaymentDate"] = qr_code.updated_at.date()
+            serializer.validated_data["PaymentDate"] = qr_code.updated_at
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
-            if isinstance(response, bytes):
-                DocumentId = response.decode().split("</Id>")[0].split("<Id>")[1]
-            else:
-                DocumentId = response.Response["Id"]
-            download_rcae_document.apply_async(args=[DocumentId])
+            document_id = response.Response["Id"]
+            download_rcae_document.apply_async(args=[document_id])
 
             return Response(
                 {
-                    "DocumentId": DocumentId,
-                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{DocumentId}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
+                    "DocumentId": document_id,
+                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
                 },
                 status=status.HTTP_200_OK,
             )
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="get-medical-insurance-constants",
+    )
+    def get_medical_insurance_constants(self, request):
+        service = MedicinaAPI().get_all_directories()
+        return Response(service, status=status.HTTP_200_OK)
 
     @extend_schema(responses={200: Serializer})
     @action(

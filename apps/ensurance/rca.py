@@ -101,25 +101,12 @@ class RcaExportServiceClient:
         )
         try:
             self.authenticate()
-            self.client.settings.raw_response = True  # Return raw response
             response = self.service.CalculateRCAIPremium(SecurityToken=self.security_token, request=request_obj)
-        except Exception as e:
-            # Catch and re-raise API exceptions
+        except Exception as e:  # noqa: BLE001
             raise APIException(detail={"detail": str(e)}) from e
-
-            # Attempt to parse and validate response; fallback on failure
-
-        return response  # Return raw Zeep response object
-
-        # TODO - This will work when BNM will fix RCA API
-        # try:
-        #     self.authenticate()
-        #     response = self.service.CalculateRCAIPremium(SecurityToken=self.security_token, request=request_obj)
-        # except Exception as e:  # noqa: BLE001
-        #     raise APIException(detail={"detail": str(e)}) from e
-        # if response.IsSuccess is False:
-        #     raise ValidationError(detail={"detail": response.ErrorMessage})
-        # return response
+        if response.IsSuccess is False:
+            raise ValidationError(detail={"detail": response.ErrorMessage})
+        return response
 
     def calculate_green_card(self, request_obj: dict):
         """

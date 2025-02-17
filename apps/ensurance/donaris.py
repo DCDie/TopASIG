@@ -212,19 +212,3 @@ class MedicinaAPI:
         :return: JSON response with printed form details.
         """
         return self._post("medicina_forme_printate", json_data=print_data)
-
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    # Replace with the actual base URL
-
-    api = MedicinaAPI(BASE_URL)
-
-    # Example: Retrieve all справочники in one call
-    try:
-        directories = api.get_all_directories()
-        print("Directories data:")
-        for key, value in directories.items():
-            print(f"{key}: {value}")
-    except requests.HTTPError as e:
-        print(f"HTTP error occurred: {e}")

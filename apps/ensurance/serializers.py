@@ -46,7 +46,7 @@ class CalculateGreenCardInputSerializer(serializers.Serializer):
     )
 
 
-class InsurerPrimeRCASerializer(serializers.Serializer):
+class InsurerPrimeRCAESerializer(serializers.Serializer):
     Name = serializers.CharField(max_length=255)
     IDNO = serializers.CharField(max_length=13, min_length=13)
     PrimeSum = serializers.DecimalField(max_digits=20, decimal_places=2)
@@ -59,12 +59,20 @@ class InsurerPrimeRCASerializer(serializers.Serializer):
     )
 
 
+class InsurerPrimeRCAISerializer(InsurerPrimeRCAESerializer):
+    PrimeSumMDL = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_PrimeSumMDL(obj):  # noqa: N802
+        return obj.get("PrimeSum")
+
+
 class InsurersPrimeRCASerializer(serializers.Serializer):
-    InsurerPrimeRCAI = InsurerPrimeRCASerializer(many=True)
+    InsurerPrimeRCAI = InsurerPrimeRCAISerializer(many=True)
 
 
 class InsurersPrimeGreenCardSerializer(serializers.Serializer):
-    InsurerPrimeRCAE = InsurerPrimeRCASerializer(many=True)
+    InsurerPrimeRCAE = InsurerPrimeRCAESerializer(many=True)
 
 
 class CalculateRCAOutputSerializer(serializers.Serializer):
@@ -73,8 +81,8 @@ class CalculateRCAOutputSerializer(serializers.Serializer):
     IsSuccess = serializers.BooleanField()
     ErrorMessage = serializers.CharField(allow_null=True, required=False)
     Territory = serializers.CharField(max_length=100)
-    PersonFirstName = serializers.CharField(max_length=100)
-    PersonLastName = serializers.CharField(max_length=100)
+    PersonFirstName = serializers.CharField(max_length=100, required=False, default=None, allow_null=True)
+    PersonLastName = serializers.CharField(max_length=100, required=False, default=None, allow_null=True)
     VehicleMark = serializers.CharField(max_length=100)
     VehicleModel = serializers.CharField(max_length=100)
     VehicleRegistrationNumber = serializers.CharField(max_length=20)
