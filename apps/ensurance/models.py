@@ -45,6 +45,7 @@ class RCACompany(models.Model):
     name = models.CharField(max_length=255, verbose_name="Company Name")
     idno = models.CharField(max_length=50, unique=True, verbose_name="IDNO")
     is_active = models.BooleanField(default=True, verbose_name="Is Active")
+    is_public = models.BooleanField(default=True, verbose_name="Is Public")
     logo = models.FileField(
         storage=MinioBackend(bucket_name=settings.MINIO_MEDIA_FILES_BUCKET),
         upload_to=rca_company_logo_path,

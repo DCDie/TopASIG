@@ -13,8 +13,8 @@ class FileAdmin(admin.ModelAdmin):
 
 @admin.register(RCACompany)
 class RCACompanyAdmin(admin.ModelAdmin):
-    list_display = ("name", "idno", "is_active", "logo")
+    list_display = ("name", "idno", "is_active", "is_public", "logo")
     search_fields = ("name", "idno")
     list_filter = ("is_active",)
     readonly_fields = ("name", "idno")
-    fields = ("name", "idno", "is_active", "logo")
+    fields = ("name", "idno", "is_active", "is_public", "logo")

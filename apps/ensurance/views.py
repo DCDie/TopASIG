@@ -83,8 +83,14 @@ class RcaViewSet(GenericViewSet):
 
         for insurer in response.InsurersPrime.InsurerPrimeRCAI:
             company = rca_companies.get(insurer.IDNO)
+            if not company:
+                company = RCACompany.objects.create(
+                    name=insurer.Name, idno=insurer.IDNO, is_active=True, is_public=True
+                )
+            if not company.is_public:
+                response.InsurersPrime.InsurerPrimeRCAI.remove(insurer)
             insurer["is_active"] = company.is_active if company else False
-            insurer["logo"] = company.logo.url if company else static("public/Logo.png")
+            insurer["logo"] = company.logo.url if company.logo else static("public/Logo.png")
 
         # Validate and serialize the response
         output_serializer = CalculateRCAOutputSerializer(data=serialize_object(response))
@@ -180,6 +186,12 @@ class RcaViewSet(GenericViewSet):
 
         for insurer in response.InsurersPrime.InsurerPrimeRCAE:
             company = rca_companies.get(insurer.IDNO)
+            if not company:
+                company = RCACompany.objects.create(
+                    name=insurer.Name, idno=insurer.IDNO, is_active=True, is_public=True
+                )
+            if not company.is_public:
+                response.InsurersPrime.InsurerPrimeRCAE.remove(insurer)
             insurer["is_active"] = company.is_active if company else False
             insurer["logo"] = company.logo.url if company else static("public/Logo.png")
 
