@@ -27,6 +27,7 @@ django-jazzmin = "^3.0.1"
 django-cleanup = "^9.0.0"
 qrcode = {extras = ["pil"], version = "^8.0"}
 redis = "^5.2.1"
+pypdf2 = "^3.0.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.3"

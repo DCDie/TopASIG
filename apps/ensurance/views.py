@@ -12,6 +12,7 @@ from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 from zeep.helpers import serialize_object
 
+from apps.ensurance.constants import ContractType
 from apps.ensurance.donaris import MedicinaAPI
 from apps.ensurance.helpers import insert_image_into_pdf
 from apps.ensurance.models import File, RCACompany
@@ -26,7 +27,7 @@ from apps.ensurance.serializers import (
     SaveRcaDocumentSerializer,
     SendFileRequestSerializer,
 )
-from apps.ensurance.tasks import download_rcae_document, download_rcai_document
+from apps.ensurance.tasks import download_and_merge_documents
 
 
 class RcaViewSet(GenericViewSet):
@@ -143,7 +144,7 @@ class RcaViewSet(GenericViewSet):
             # Call the SOAP method
             response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
             document_id = response.Response["Id"]
-            download_rcai_document.apply_async(args=[document_id])
+            download_and_merge_documents(document_id, ContractType.RCAI)
             return Response(
                 {
                     "DocumentId": document_id,
@@ -193,7 +194,7 @@ class RcaViewSet(GenericViewSet):
             if not company.is_public:
                 response.InsurersPrime.InsurerPrimeRCAE.remove(insurer)
             insurer["is_active"] = company.is_active if company else False
-            insurer["logo"] = company.logo.url if company else static("public/Logo.png")
+            insurer["logo"] = company.logo.url if company.logo else static("public/Logo.png")
 
         output_serializer = CalculateGreenCardOutputSerializer(data=serialize_object(response))
         output_serializer.is_valid(raise_exception=True)
@@ -245,7 +246,7 @@ class RcaViewSet(GenericViewSet):
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
             document_id = response.Response["Id"]
-            download_rcae_document.apply_async(args=[document_id])
+            download_and_merge_documents(document_id, ContractType.CV)
 
             return Response(
                 {

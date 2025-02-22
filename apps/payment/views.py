@@ -23,6 +23,7 @@ from apps.payment.serializers import (
     SizeSerializer,
     VbPayeeQrDtoSerializer,
 )
+from apps.payment.tasks import update_qr_status_if_debug
 
 
 class QrCodeViewSet(GenericViewSet):
@@ -137,6 +138,8 @@ class QrCodeViewSet(GenericViewSet):
             )
             instance.file = file
             instance.save()
+            if settings.DEBUG:
+                update_qr_status_if_debug.apply_async(args=[instance.uuid], countdown=15)
         return Response(QRCodeSerializer(instance).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(responses=QRCodeSerializer)
@@ -168,7 +171,10 @@ class QrCodeViewSet(GenericViewSet):
         response_data = qrcode_service.get_qr_status(uuid)
 
         # Update the status of the QR code in the database
-        if response_data["result"]["status"] != instance.status and response_data["result"]["status"] != StatusChoices.ACTIVE:
+        if (
+            response_data["result"]["status"] != instance.status
+            and response_data["result"]["status"] != StatusChoices.ACTIVE
+        ):
             instance.status = response_data["result"]["status"]
             instance.save()
         return Response(QRCodeSerializer(instance).data)

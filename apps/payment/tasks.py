@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from celery import shared_task
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -44,3 +45,9 @@ def update_qr_status():
                 data["updated"].append(qr.pk)
 
     return data
+
+
+@shared_task
+def update_qr_status_if_debug(qr: str):
+    if settings.DEBUG:
+        QrCode.objects.filter(status=StatusChoices.ACTIVE, uuid=qr).update(status=StatusChoices.PAID)

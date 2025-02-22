@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import requests
 from django.conf import settings
 
@@ -22,9 +24,12 @@ class MedicinaAPI:
 
         :param base_url: Base URL of the published database, e.g., "https://1c.donaris.md/donaris_web"
         """
+        password = settings.DONARIS_PASSWORD
+        login = settings.DONARIS_USERNAME
         self.base_url = base_url.rstrip("/")
         self.api_path = "/hs/medicina_peste_hotare/v1/"
         self.session = requests.Session()
+        self.session.auth = (login, password)
 
     def _get(self, endpoint, params=None):
         """
@@ -122,7 +127,7 @@ class MedicinaAPI:
 
     def get_all_directories(self):
         """
-        Retrieve all справочники (directories) in one function call.
+        Retrieve all справочники (directories) using threads for concurrent requests.
 
         :return: A dictionary with the following keys:
                  - medicina_producti
@@ -134,17 +139,35 @@ class MedicinaAPI:
                  - spravociniki_goroda
                  - regioni_i_strani
         """
-        directories = {
-            "medicina_producti": self.get_medicina_producti(),
-            "medicina_tseli_poezdki": self.get_medicina_tseli_poezdki(),
-            "medicina_regioni": self.get_medicina_regioni(),
-            "spravociniki_strani": self.get_spravociniki_strani(),
-            "medicina_sport": self.get_medicina_sport(),
-            "medicina_straniUF": self.get_medicina_straniUF(),
-            "spravociniki_goroda": self.get_spravociniki_goroda(),
-            "regioni_i_strani": self.get_regioni_i_strani(),
+        # Map keys to the corresponding method that retrieves the data
+        endpoints = {
+            "medicina_producti": self.get_medicina_producti,
+            "medicina_tseli_poezdki": self.get_medicina_tseli_poezdki,
+            "medicina_regioni": self.get_medicina_regioni,
+            "spravociniki_strani": self.get_spravociniki_strani,
+            "medicina_sport": self.get_medicina_sport,
+            "medicina_straniUF": self.get_medicina_straniUF,
+            "spravociniki_goroda": self.get_spravociniki_goroda,
+            "regioni_i_strani": self.get_regioni_i_strani,
         }
-        return directories
+
+        results = {}
+
+        # Use a ThreadPoolExecutor to make concurrent GET calls
+        with ThreadPoolExecutor(max_workers=len(endpoints)) as executor:
+            future_to_key = {executor.submit(func): key for key, func in endpoints.items()}
+
+            # As each future completes, store the result or handle exceptions
+            for future in as_completed(future_to_key):
+                key = future_to_key[future]
+                try:
+                    results[key] = future.result()
+                except Exception:
+                    # In case of error, you could log the error or set the result to None
+                    # For example, results[key] = {"error": str(e)}
+                    results[key] = None
+
+        return results
 
     # --- POST methods for operations ---
 
