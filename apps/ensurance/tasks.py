@@ -6,7 +6,6 @@ from celery import shared_task
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.ensurance.constants import DocumentType, FileTypes
-from apps.ensurance.helpers import insert_image_into_pdf
 from apps.ensurance.models import File
 from apps.ensurance.rca import RcaExportServiceClient
 
@@ -33,8 +32,8 @@ def download_and_merge_documents(document_id, ContractType: str):
             ContractType=ContractType,
         )
         # Insert your watermark/image here
-        processed_pdf_content = insert_image_into_pdf(response.FileContent)
-        return doc_type, processed_pdf_content
+        # processed_pdf_content = insert_image_into_pdf(response.FileContent)
+        return doc_type, response.FileContent
 
     # Download all documents in parallel using a thread pool
     results = {}
