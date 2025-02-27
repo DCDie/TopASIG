@@ -1,51 +1,54 @@
-name: prod-asig
+name: test-asig
 services:
-  web:
+  test-web:
     build:
       context: ./web
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - web/.env
+      - web/.env.test
     depends_on:
-      - api
+      - test-api
     ports:
-      - "3000:3000"
+      - "3001:3000"
 
-  api:
+  test-api:
     build: .
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.test
     environment:
+      MINIO_ENDPOINT: test-minio:9000
       SQL_HOST: host.docker.internal
-      MINIO_ENDPOINT: minio:9000
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://api:8000/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health" ]
     ports:
-      - "8000:8000"
+      - "8001:8000"
+    depends_on:
+      test-minio:
+        condition: service_healthy
 
-  celery-worker:
+  test-celery-worker:
     build: .
     restart: unless-stopped
     command: celery -A config worker --loglevel=info
     env_file:
-      - .env
+      - .env.test
     environment:
+      MINIO_ENDPOINT: test-minio:9000
       SQL_HOST: host.docker.internal
-      MINIO_ENDPOINT: minio:9000
 
-  celery-beat:
+  test-celery-beat:
     build: .
     restart: unless-stopped
     command: celery -A config beat --loglevel=info
     env_file:
-      - .env
+      - .env.test
     environment:
+      MINIO_ENDPOINT: test-minio:9000
       SQL_HOST: host.docker.internal
-      MINIO_ENDPOINT: minio:9000
 
-  minio:
+  test-minio:
     image: bitnami/minio:latest
     restart: unless-stopped
     volumes:
@@ -59,5 +62,5 @@ services:
       timeout: 5s
       retries: 3
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9011:9001"
+      - "9010:9000"

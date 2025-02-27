@@ -2,6 +2,7 @@
 venv
 db.sqlite3
 .env
+.env.test
 data
 letsencrypt
 postgres_data
