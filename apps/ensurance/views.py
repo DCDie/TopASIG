@@ -24,6 +24,7 @@ from apps.ensurance.serializers import (
     CalculateRCAOutputSerializer,
     GetFileRequestSerializer,
     GreenCardDocumentModelSerializer,
+    RootSerializer,
     SaveRcaDocumentSerializer,
     SendFileRequestSerializer,
 )
@@ -262,15 +263,17 @@ class RcaViewSet(GenericViewSet):
         url_path="get-medical-insurance-constants",
     )
     def get_medical_insurance_constants(self, request):
-        service = MedicinaAPI().get_all_directories()
-        return Response(service, status=status.HTTP_200_OK)
+        data = MedicinaAPI().get_all_directories()
+        return Response(data, status=status.HTTP_200_OK)
 
-    @extend_schema(responses={200: Serializer})
+    @extend_schema(responses={200: RootSerializer(many=True)})
     @action(
         detail=False,
         methods=["post"],
         url_path="calculate-medical-insurance",
-        serializer_class=Serializer,
+        serializer_class=RootSerializer,
+        filter_backends=[],
+        pagination_class=None,
     )
     def calculate_medical_insurance(self, request):
         """
@@ -292,9 +295,8 @@ class RcaViewSet(GenericViewSet):
         # Validate input data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # Some logic to calculate the cost
-        return Response({}, status=status.HTTP_200_OK)
+        data = MedicinaAPI().calculate_tariff(serializer.validated_data)
+        return Response([data], status=status.HTTP_200_OK)
 
     @extend_schema(
         parameters=[GetFileRequestSerializer],

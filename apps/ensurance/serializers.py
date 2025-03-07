@@ -184,3 +184,49 @@ class SendFileRequestSerializer(serializers.Serializer):
     DocumentType = serializers.ChoiceField(choices=DocumentType.choices, required=False, default=DocumentType.CONTRACT)
     ContractType = serializers.ChoiceField(choices=ContractType.choices, required=False, default=ContractType.RCAI)
     email = serializers.EmailField(required=True)
+
+
+class DateStringField(serializers.DateField):
+    """
+    A custom DateField that:
+      1. Expects a string date from the request (like "2025.03.07")
+      2. Parses it to a Python date object internally
+      3. Returns a string in the desired format in validated_data
+    """
+
+    def to_internal_value(self, data):
+        # Let the default `DateField` parsing happen first:
+        date_obj = super().to_internal_value(data)
+        # Now convert that date object to a string in the desired format:
+        return date_obj.strftime("%Y.%m.%d")
+
+
+class PersonSerializer(serializers.Serializer):
+    idnp = serializers.CharField(max_length=13)
+    fullName = serializers.CharField(max_length=255)
+    birthday = DateStringField()
+    PrimaVAL = serializers.FloatField(read_only=True)
+
+
+class DogMEDPHSerializer(serializers.Serializer):
+    UIN_Dokumenta = serializers.CharField(max_length=255, allow_blank=True)
+    valiuta_ = serializers.CharField(max_length=3)
+    data = DateStringField()
+    startDate = DateStringField()
+    endDate = DateStringField()
+    ProductUIN = serializers.CharField(max_length=255)
+    RegiuniUIN = serializers.CharField(max_length=255)
+    ScopulCalatorieiUIN = serializers.CharField(max_length=255)
+    TaraUIN = serializers.CharField(max_length=255)
+    TipSportUIN = serializers.CharField(max_length=255, allow_blank=True)
+    SARS_COV19 = serializers.BooleanField()
+    ZileDeAcoperire = serializers.IntegerField()
+    SumaDeAsig = serializers.IntegerField()
+    MesiatsevPeriodaStrahovania = serializers.IntegerField()
+    persons = PersonSerializer(many=True)
+    PrimaTotalaVAL = serializers.FloatField(read_only=True)
+    PrimaTotalaLEI = serializers.FloatField(read_only=True)
+
+
+class RootSerializer(serializers.Serializer):
+    DogMEDPH = DogMEDPHSerializer(many=True)
