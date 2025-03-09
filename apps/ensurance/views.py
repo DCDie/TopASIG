@@ -15,7 +15,7 @@ from zeep.helpers import serialize_object
 from apps.ensurance.constants import ContractType
 from apps.ensurance.donaris import MedicinaAPI
 from apps.ensurance.helpers import insert_image_into_pdf
-from apps.ensurance.models import File, RCACompany
+from apps.ensurance.models import File, MedicalInsuranceCompany, RCACompany
 from apps.ensurance.rca import RcaExportServiceClient
 from apps.ensurance.serializers import (
     CalculateGreenCardInputSerializer,
@@ -24,6 +24,7 @@ from apps.ensurance.serializers import (
     CalculateRCAOutputSerializer,
     GetFileRequestSerializer,
     GreenCardDocumentModelSerializer,
+    RootReturnSerializer,
     RootSerializer,
     SaveRcaDocumentSerializer,
     SendFileRequestSerializer,
@@ -257,47 +258,6 @@ class RcaViewSet(GenericViewSet):
                 status=status.HTTP_200_OK,
             )
 
-    @action(
-        detail=False,
-        methods=["get"],
-        url_path="get-medical-insurance-constants",
-    )
-    def get_medical_insurance_constants(self, request):
-        data = MedicinaAPI().get_all_directories()
-        return Response(data, status=status.HTTP_200_OK)
-
-    @extend_schema(responses={200: RootSerializer(many=True)})
-    @action(
-        detail=False,
-        methods=["post"],
-        url_path="calculate-medical-insurance",
-        serializer_class=RootSerializer,
-        filter_backends=[],
-        pagination_class=None,
-    )
-    def calculate_medical_insurance(self, request):
-        """
-        Calculate the estimated cost of medical insurance based on input data.
-
-        This endpoint validates the input data through the associated serializer.
-        Upon successful validation, it processes the data and performs specific
-        logic to compute the estimated medical insurance cost. The computed result
-        is returned as part of the HTTP response.
-
-        Arguments:
-            request: REST framework's Request instance containing input data
-                for calculating medical insurance.
-
-        Returns:
-            Response containing the result of the medical insurance calculation
-            along with an appropriate HTTP status code.
-        """
-        # Validate input data
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = MedicinaAPI().calculate_tariff(serializer.validated_data)
-        return Response([data], status=status.HTTP_200_OK)
-
     @extend_schema(
         parameters=[GetFileRequestSerializer],
         responses={
@@ -379,3 +339,73 @@ class RcaViewSet(GenericViewSet):
         message.send()
 
         return Response({"detail": "File sent successfully."}, status=status.HTTP_200_OK)
+
+
+class MedicalInsuranceViewSet(GenericViewSet):
+    """
+    A viewset for performing RCA-related operations, such as calculations and saving documents.
+
+    This class extends GenericViewSet and provides multiple endpoints for managing RCA and related
+    documents. It handles operations such as calculating RCA costs, saving RCA and Green Card
+    documents, calculating Green Card costs, calculating Medical Insurance costs, and retrieving
+    RCA files. Each operation is handled by a separate method with appropriate serializers and
+    responses.
+
+    Attributes:
+        permission_classes (list): List of permission classes used to control access to these actions.
+        authentication_classes (list): List of authentication classes used for these actions.
+    """
+
+    permission_classes = []
+    authentication_classes = []
+    serializer_class = Serializer
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="medical-insurance-constants",
+    )
+    def get_medical_insurance_constants(self, request):
+        data = MedicinaAPI().get_all_directories()
+        return Response(data, status=status.HTTP_200_OK)
+
+    @extend_schema(responses={200: RootReturnSerializer(many=True)})
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="calculate-medical-insurance",
+        serializer_class=RootSerializer,
+        filter_backends=[],
+        pagination_class=None,
+    )
+    def calculate_medical_insurance(self, request):
+        """
+        Calculate the estimated cost of medical insurance based on input data.
+
+        This endpoint validates the input data through the associated serializer.
+        Upon successful validation, it processes the data and performs specific
+        logic to compute the estimated medical insurance cost. The computed result
+        is returned as part of the HTTP response.
+
+        Arguments:
+            request: REST framework's Request instance containing input data
+                for calculating medical insurance.
+
+        Returns:
+            Response containing the result of the medical insurance calculation
+            along with an appropriate HTTP status code.
+        """
+        # Validate input data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = MedicinaAPI().calculate_tariff(serializer.validated_data)
+        medical_insurance_company = MedicalInsuranceCompany.objects.first()
+        data["DogMEDPH"][0]["IDNO"] = medical_insurance_company.idno
+        data["DogMEDPH"][0]["Name"] = medical_insurance_company.name
+        data["DogMEDPH"][0]["is_active"] = medical_insurance_company.is_active
+        data["DogMEDPH"][0]["logo"] = (
+            medical_insurance_company.logo.url if medical_insurance_company.logo else static("public/Logo.png")
+        )
+        return_data = RootReturnSerializer(data=[data], many=True)
+        return_data.is_valid(raise_exception=True)
+        return Response(return_data.data, status=status.HTTP_200_OK)

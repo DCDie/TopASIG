@@ -42,10 +42,10 @@ def rca_company_logo_path(instance, filename):
 
 
 class RCACompany(models.Model):
-    name = models.CharField(max_length=255, verbose_name="Company Name")
-    idno = models.CharField(max_length=50, unique=True, verbose_name="IDNO")
-    is_active = models.BooleanField(default=True, verbose_name="Is Active")
-    is_public = models.BooleanField(default=True, verbose_name="Is Public")
+    name = models.CharField(max_length=255, verbose_name=_("Company Name"))
+    idno = models.CharField(max_length=50, unique=True, verbose_name=_("IDNO"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Is Active"))
+    is_public = models.BooleanField(default=True, verbose_name=_("Is Public"))
     logo = models.FileField(
         storage=MinioBackend(bucket_name=settings.MINIO_MEDIA_FILES_BUCKET),
         upload_to=rca_company_logo_path,
@@ -59,3 +59,23 @@ class RCACompany(models.Model):
     class Meta:
         verbose_name = _("RCA Company")
         verbose_name_plural = _("RCA Companies")
+
+
+class MedicalInsuranceCompany(models.Model):
+    name = models.CharField(max_length=255, verbose_name=_("Company Name"))
+    idno = models.CharField(max_length=50, unique=True, verbose_name=_("IDNO"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Is Active"))
+    is_public = models.BooleanField(default=True, verbose_name=_("Is Public"))
+    logo = models.FileField(
+        storage=MinioBackend(bucket_name=settings.MINIO_MEDIA_FILES_BUCKET),
+        upload_to=rca_company_logo_path,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("Medical Insurance Company")
+        verbose_name_plural = _("Medical Insurance Companies")

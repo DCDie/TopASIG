@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
 from apps.ensurance.constants import (
@@ -55,7 +57,7 @@ class InsurerPrimeRCAESerializer(serializers.Serializer):
     logo = serializers.URLField(
         allow_null=True,
         required=False,
-        default="https://www.google.com/url?sa=i&url=https%3A%2F%2Fdataset.gov.md%2Fru%2Forganization%2F1015601000134&psig=AOvVaw0lWpKM2jNr6jxpf6d44FTo&ust=1736284024523000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCMDPkZyA4ooDFQAAAAAdAAAAABAE",
+        default="https://i.pinimg.com/736x/ab/3d/e2/ab3de2f5cc08f507f728f39c66e596b8.jpg",
     )
 
 
@@ -205,7 +207,6 @@ class PersonSerializer(serializers.Serializer):
     idnp = serializers.CharField(max_length=13)
     fullName = serializers.CharField(max_length=255)
     birthday = DateStringField()
-    PrimaVAL = serializers.FloatField(read_only=True)
 
 
 class DogMEDPHSerializer(serializers.Serializer):
@@ -224,9 +225,41 @@ class DogMEDPHSerializer(serializers.Serializer):
     SumaDeAsig = serializers.IntegerField()
     MesiatsevPeriodaStrahovania = serializers.IntegerField()
     persons = PersonSerializer(many=True)
+
+
+class DotDateField(serializers.DateField):
+    def to_internal_value(self, value):
+        try:
+            return datetime.strptime(value, "%Y.%m.%d").date()
+        except ValueError as e:
+            raise serializers.ValidationError("Date format must be YYYY.MM.DD") from e
+
+
+class PersonReturnSerializer(PersonSerializer):
+    birthday = DotDateField()
+    PrimaVAL = serializers.FloatField(read_only=True)
+
+
+class DogMEDPHReturnSerializer(DogMEDPHSerializer):
+    IDNO = serializers.CharField(max_length=13)
+    Name = serializers.CharField(max_length=255)
+    is_active = serializers.BooleanField(default=True)
+    logo = serializers.URLField(
+        allow_null=True,
+        required=False,
+        default="https://i.pinimg.com/736x/ab/3d/e2/ab3de2f5cc08f507f728f39c66e596b8.jpg",
+    )
+    data = DotDateField()
+    startDate = DotDateField()
+    endDate = DotDateField()
+    persons = PersonReturnSerializer(many=True)
     PrimaTotalaVAL = serializers.FloatField(read_only=True)
     PrimaTotalaLEI = serializers.FloatField(read_only=True)
 
 
 class RootSerializer(serializers.Serializer):
     DogMEDPH = DogMEDPHSerializer(many=True)
+
+
+class RootReturnSerializer(serializers.Serializer):
+    DogMEDPH = DogMEDPHReturnSerializer(many=True)
