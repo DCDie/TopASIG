@@ -304,6 +304,7 @@ JAZZMIN_SETTINGS = {
         "auth.group": "fas fa-users",
         "ensurance.File": "fas fa-file",
         "ensurance.RCACompany": "fas fa-building",
+        "ensurance.MedicalInsuranceCompany": "fas fa-building",
         "payment.QrCode": "fas fa-money-check",
         "drf_api_logger.APILogsModel": "fas fa-clipboard-list",
         "django_celery_results.TaskResult": "fas fa-tasks",

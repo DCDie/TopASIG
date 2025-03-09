@@ -14,7 +14,6 @@ from zeep.helpers import serialize_object
 
 from apps.ensurance.constants import ContractType
 from apps.ensurance.donaris import MedicinaAPI
-from apps.ensurance.helpers import insert_image_into_pdf
 from apps.ensurance.models import File, MedicalInsuranceCompany, RCACompany
 from apps.ensurance.rca import RcaExportServiceClient
 from apps.ensurance.serializers import (
@@ -296,10 +295,9 @@ class RcaViewSet(GenericViewSet):
         if file:
             return HttpResponse(file.file.read(), content_type="application/pdf")
 
-        # Call the SOAP method to get the file in case it does not exist in the database
-        response = RcaExportServiceClient().get_file(DocumentId=pk, **serializer.validated_data)
-        content = insert_image_into_pdf(response.FileContent)
-        return HttpResponse(content, content_type="application/pdf")
+        download_and_merge_documents(pk, serializer.validated_data["ContractType"])
+        file = File.objects.filter(external_id=pk).first()
+        return HttpResponse(file.file.read(), content_type="application/pdf")
 
     @action(
         detail=True,
@@ -326,7 +324,10 @@ class RcaViewSet(GenericViewSet):
 
         file = File.objects.filter(external_id=pk).first()
         if not file:
-            return Response({"detail": "File not found."}, status=status.HTTP_404_NOT_FOUND)
+            download_and_merge_documents(pk, serializer.validated_data["ContractType"])
+            file = File.objects.filter(external_id=pk).first()
+            if not file:
+                return Response({"detail": "File not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Send the file to the user by email
         message = EmailMultiAlternatives(

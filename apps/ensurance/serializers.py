@@ -4,7 +4,6 @@ from rest_framework import serializers
 
 from apps.ensurance.constants import (
     ContractType,
-    DocumentType,
     GreenCardVehicleCategories,
     GreenCardZones,
     OperationModes,
@@ -178,12 +177,10 @@ class GreenCardDocumentModelSerializer(serializers.Serializer):
 
 
 class GetFileRequestSerializer(serializers.Serializer):
-    DocumentType = serializers.ChoiceField(choices=DocumentType.choices, required=False, default=DocumentType.CONTRACT)
     ContractType = serializers.ChoiceField(choices=ContractType.choices, required=False, default=ContractType.RCAI)
 
 
 class SendFileRequestSerializer(serializers.Serializer):
-    DocumentType = serializers.ChoiceField(choices=DocumentType.choices, required=False, default=DocumentType.CONTRACT)
     ContractType = serializers.ChoiceField(choices=ContractType.choices, required=False, default=ContractType.RCAI)
     email = serializers.EmailField(required=True)
 
