@@ -16,6 +16,7 @@ class File(models.Model):
         storage=MinioBackend(bucket_name=settings.MINIO_MEDIA_FILES_BUCKET), upload_to=iso_date_prefix
     )
     type = models.CharField(max_length=50, choices=FileTypes.choices, default=FileTypes.OTHER)
+    data = models.JSONField(null=True, default=dict)
 
     def __str__(self):
         return self.name or self.external_id
@@ -23,6 +24,7 @@ class File(models.Model):
     class Meta:
         verbose_name = _("File")
         verbose_name_plural = _("Files")
+        unique_together = ("external_id", "type")
 
 
 @receiver(post_delete, sender=File)

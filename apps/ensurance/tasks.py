@@ -11,7 +11,7 @@ from apps.ensurance.rca import RcaExportServiceClient
 
 
 @shared_task
-def download_and_merge_documents(document_id, ContractType: str):
+def download_and_merge_documents(document_id, ContractType: str, data: dict | None = None) -> int:
     """
     Download three types of documents (CONTRACT, DEMAND, INSURANCE_POLICY)
     for a given document_id in parallel, merge them into one PDF, and store
@@ -71,8 +71,11 @@ def download_and_merge_documents(document_id, ContractType: str):
     # Finally, create the File record in your database
     file_obj = File.objects.create(
         external_id=document_id,
-        type=FileTypes.RCA,
+        type=FileTypes.RCA if ContractType == "RCAI" else FileTypes.GREEN_CARD,
         file=merged_file,
+        # data=json.loads(json.dumps(data, default=lambda o: o.isoformat() if hasattr(o, "isoformat") else o))
+        # if data
+        # else None,
     )
 
     return file_obj.id

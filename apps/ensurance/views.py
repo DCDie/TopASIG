@@ -145,11 +145,13 @@ class RcaViewSet(GenericViewSet):
             # Call the SOAP method
             response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
             document_id = response.Response["Id"]
-            download_and_merge_documents(document_id, ContractType.RCAI)
+            download_and_merge_documents(
+                document_id, ContractType.RCAI, data=serialize_object(response, target_cls=dict)
+            )
             return Response(
                 {
                     "DocumentId": document_id,
-                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
+                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/?ContractType=RCAI",
                 },
                 status=status.HTTP_200_OK,
             )
@@ -247,12 +249,12 @@ class RcaViewSet(GenericViewSet):
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
 
             document_id = response.Response["Id"]
-            download_and_merge_documents(document_id, ContractType.CV)
+            download_and_merge_documents(document_id, ContractType.CV, data=serialize_object(response))
 
             return Response(
                 {
                     "DocumentId": document_id,
-                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/?ContractType=RCAI&DocumentType=Contract",
+                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/?ContractType=CV",
                 },
                 status=status.HTTP_200_OK,
             )
