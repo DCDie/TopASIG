@@ -401,6 +401,7 @@ class MedicalInsuranceViewSet(GenericViewSet):
         # Validate input data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data["valiuta_"] = "840"
         data = MedicinaAPI().calculate_tariff(serializer.validated_data)
         medical_insurance_company = MedicalInsuranceCompany.objects.first()
         data["DogMEDPH"][0]["IDNO"] = medical_insurance_company.idno

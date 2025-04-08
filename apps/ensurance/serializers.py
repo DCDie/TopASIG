@@ -207,8 +207,8 @@ class PersonSerializer(serializers.Serializer):
 
 
 class DogMEDPHSerializer(serializers.Serializer):
-    UIN_Dokumenta = serializers.CharField(max_length=255, allow_blank=True)
-    valiuta_ = serializers.CharField(max_length=3)
+    UIN_Dokumenta = serializers.CharField(max_length=255, allow_blank=True, read_only=True)
+    valiuta_ = serializers.CharField(max_length=3, required=False, default="840")
     data = DateStringField()
     startDate = DateStringField()
     endDate = DateStringField()
@@ -217,11 +217,24 @@ class DogMEDPHSerializer(serializers.Serializer):
     ScopulCalatorieiUIN = serializers.CharField(max_length=255)
     TaraUIN = serializers.CharField(max_length=255)
     TipSportUIN = serializers.CharField(max_length=255, allow_blank=True)
-    SARS_COV19 = serializers.BooleanField()
-    ZileDeAcoperire = serializers.IntegerField()
-    SumaDeAsig = serializers.IntegerField()
-    MesiatsevPeriodaStrahovania = serializers.IntegerField()
+    SARS_COV19 = serializers.BooleanField(required=False, default=True)
+    # ZileDeAcoperire = serializers.IntegerField()
+    SumaDeAsig = serializers.IntegerField(required=False, default=30000)
+    # MesiatsevPeriodaStrahovania = serializers.IntegerField()
     persons = PersonSerializer(many=True)
+
+    def to_internal_value(self, data):
+        data = super().to_internal_value(data)
+        # calculate from startDate and endDate
+        start = (
+            datetime.strptime(data["startDate"], "%Y.%m.%d")
+            if isinstance(data["startDate"], str)
+            else data["startDate"]
+        )
+        end = datetime.strptime(data["endDate"], "%Y.%m.%d") if isinstance(data["endDate"], str) else data["endDate"]
+        data["ZileDeAcoperire"] = (start - end).days
+        data["MesiatsevPeriodaStrahovania"] = (start.month - end.month) + 1
+        return data
 
 
 class DotDateField(serializers.DateField):
