@@ -92,7 +92,7 @@ class RcaViewSet(GenericViewSet):
             if not company.is_public:
                 response.InsurersPrime.InsurerPrimeRCAI.remove(insurer)
             insurer["is_active"] = company.is_active if company else False
-            insurer["logo"] = company.logo.url if company.logo else static("public/Logo.png")
+            insurer["logo"] = company.logo.url if company.logo else static("public/default-logo.png")
 
         # Validate and serialize the response
         output_serializer = CalculateRCAOutputSerializer(data=serialize_object(response))
@@ -197,7 +197,7 @@ class RcaViewSet(GenericViewSet):
             if not company.is_public:
                 response.InsurersPrime.InsurerPrimeRCAE.remove(insurer)
             insurer["is_active"] = company.is_active if company else False
-            insurer["logo"] = company.logo.url if company.logo else static("public/Logo.png")
+            insurer["logo"] = company.logo.url if company.logo else static("public/default-logo.png")
 
         output_serializer = CalculateGreenCardOutputSerializer(data=serialize_object(response))
         output_serializer.is_valid(raise_exception=True)
@@ -408,7 +408,7 @@ class MedicalInsuranceViewSet(GenericViewSet):
         data["DogMEDPH"][0]["Name"] = medical_insurance_company.name
         data["DogMEDPH"][0]["is_active"] = medical_insurance_company.is_active
         data["DogMEDPH"][0]["logo"] = (
-            medical_insurance_company.logo.url if medical_insurance_company.logo else static("public/Logo.png")
+            medical_insurance_company.logo.url if medical_insurance_company.logo else static("public/default-logo.png")
         )
         return_data = RootReturnSerializer(data=[data], many=True)
         return_data.is_valid(raise_exception=True)
