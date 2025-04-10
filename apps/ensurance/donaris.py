@@ -161,11 +161,11 @@ class MedicinaAPI:
             for future in as_completed(future_to_key):
                 key = future_to_key[future]
                 try:
-                    results[key] = future.result()
+                    results[key] = future.result().get(key, [])
                 except Exception:
                     # In case of error, you could log the error or set the result to None
                     # For example, results[key] = {"error": str(e)}
-                    results[key] = None
+                    results[key] = []
 
         return results
 

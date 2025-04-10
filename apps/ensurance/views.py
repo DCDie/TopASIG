@@ -363,12 +363,31 @@ class MedicalInsuranceViewSet(GenericViewSet):
     authentication_classes = []
     serializer_class = Serializer
 
+    @extend_schema(
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "medicina_producti": {"type": "array"},
+                    "medicina_tseli_poezdki": {"type": "array"},
+                    "medicina_regioni": {"type": "array"},
+                    "spravociniki_strani": {"type": "array"},
+                    "medicina_sport": {"type": "array"},
+                    "medicina_straniUF": {"type": "array"},
+                },
+            }
+        }
+    )
     @action(
         detail=False,
         methods=["get"],
         url_path="medical-insurance-constants",
     )
     def get_medical_insurance_constants(self, request):
+        """
+        Get all medical insurance constants required for the form.
+        Returns a dictionary containing various medical insurance related constants.
+        """
         data = MedicinaAPI().get_all_directories()
         return Response(data, status=status.HTTP_200_OK)
 
