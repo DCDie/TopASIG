@@ -1,3 +1,4 @@
+import contextlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
@@ -159,13 +160,8 @@ class MedicinaAPI:
 
             # As each future completes, store the result or handle exceptions
             for future in as_completed(future_to_key):
-                key = future_to_key[future]
-                try:
-                    results[key] = future.result().get(key, [])
-                except Exception:
-                    # In case of error, you could log the error or set the result to None
-                    # For example, results[key] = {"error": str(e)}
-                    results[key] = []
+                with contextlib.suppress(Exception):
+                    results.update(future.result())
 
         return results
 

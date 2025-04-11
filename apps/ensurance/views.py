@@ -369,11 +369,13 @@ class MedicalInsuranceViewSet(GenericViewSet):
                 "type": "object",
                 "properties": {
                     "medicina_producti": {"type": "array"},
-                    "medicina_tseli_poezdki": {"type": "array"},
-                    "medicina_regioni": {"type": "array"},
-                    "spravociniki_strani": {"type": "array"},
-                    "medicina_sport": {"type": "array"},
-                    "medicina_straniUF": {"type": "array"},
+                    "goroda": {"type": "array"},
+                    "TipSport": {"type": "array"},
+                    "ScopulCalatorieiMedPH": {"type": "array"},
+                    "strani": {"type": "array"},
+                    "Regiuni": {"type": "array"},
+                    "Tara": {"type": "array"},
+                    "regioni": {"type": "array"},
                 },
             }
         }
