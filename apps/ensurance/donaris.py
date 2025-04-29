@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 from django.conf import settings
+from rest_framework.exceptions import ValidationError
 
 
 class MedicinaAPI:
@@ -57,7 +58,10 @@ class MedicinaAPI:
         """
         url = self.base_url + self.api_path + endpoint.lstrip("/")
         response = self.session.post(url, json=json_data)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            raise ValidationError(f"Bad Request: {response.text}") from e
         return response.json()
 
     # --- GET methods for справочники (directories) ---
