@@ -61,7 +61,10 @@ class MedicinaAPI:
         try:
             response.raise_for_status()
         except requests.HTTPError as e:
-            raise ValidationError(f"Bad Request: {response.text}") from e
+            if response.status_code == 500:
+                raise ValidationError(f"Server Error: {response.text}") from e
+            else:
+                raise ValidationError(response.json()) from e
         return response.json()
 
     # --- GET methods for справочники (directories) ---
