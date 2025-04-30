@@ -232,7 +232,7 @@ class DogMEDPHSerializer(serializers.Serializer):
             else data["startDate"]
         )
         end = datetime.strptime(data["endDate"], "%Y.%m.%d") if isinstance(data["endDate"], str) else data["endDate"]
-        data["ZileDeAcoperire"] = (start - end).days
+        data["ZileDeAcoperire"] = (start - end).days or 1
         data["MesiatsevPeriodaStrahovania"] = (start.month - end.month) + 1
         return data
 
