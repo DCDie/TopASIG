@@ -1,5 +1,4 @@
 import contextlib
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from uuid import uuid4
 
 import requests
@@ -136,19 +135,18 @@ class MedicinaAPI:
 
     def get_all_directories(self):
         """
-        Retrieve all справочники (directories) using threads for concurrent requests.
+        Retrieve all справочники (directories) synchronously.
 
         :return: A dictionary with the following keys:
-                 - medicina_producti
-                 - medicina_tseli_poezdki
-                 - medicina_regioni
-                 - spravociniki_strani
-                 - medicina_sport
-                 - medicina_straniUF
-                 - spravociniki_goroda
-                 - regioni_i_strani
+            - medicina_producti
+            - medicina_tseli_poezdki
+            - medicina_regioni
+            - spravociniki_strani
+            - medicina_sport
+            - medicina_straniUF
+            - spravociniki_goroda
+            - regioni_i_strani
         """
-        # Map keys to the corresponding method that retrieves the data
         endpoints = {
             "medicina_producti": self.get_medicina_producti,
             "medicina_tseli_poezdki": self.get_medicina_tseli_poezdki,
@@ -159,18 +157,10 @@ class MedicinaAPI:
             "spravociniki_goroda": self.get_spravociniki_goroda,
             "regioni_i_strani": self.get_regioni_i_strani,
         }
-
         results = {}
-
-        # Use a ThreadPoolExecutor to make concurrent GET calls
-        with ThreadPoolExecutor(max_workers=len(endpoints)) as executor:
-            future_to_key = {executor.submit(func): key for key, func in endpoints.items()}
-
-            # As each future completes, store the result or handle exceptions
-            for future in as_completed(future_to_key):
-                with contextlib.suppress(Exception):
-                    results.update(future.result())
-
+        for key, func in endpoints.items():
+            with contextlib.suppress(Exception):
+                results.update(func())
         return results
 
     # --- POST methods for operations ---
