@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
+from pathlib import Path
 
 import PyPDF2
 from celery import shared_task
@@ -79,3 +80,28 @@ def download_and_merge_documents(document_id, ContractType: str, data: dict | No
     )
 
     return file_obj.id
+
+
+@shared_task
+def download_insurance_policy(document_id) -> int:
+    """
+    Download the INSURANCE_POLICY document for a given document_id and
+    store it as a single File instance in the database.
+    """
+
+    with Path("test.pdf").open("rb") as f:
+        file_content = f.read()
+        insurance_policy_file = SimpleUploadedFile(
+            f"{document_id}_insurance_policy.pdf",
+            file_content,
+            content_type="application/pdf",
+        )
+
+        # Finally, create the File record in your database
+        file_obj = File.objects.create(
+            external_id=document_id,
+            type=FileTypes.MEDICAL_INSURANCE,
+            file=insurance_policy_file,
+        )
+
+        return file_obj.id

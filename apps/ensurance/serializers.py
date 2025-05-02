@@ -208,7 +208,7 @@ class PersonSerializer(serializers.Serializer):
 
 class DogMEDPHSerializer(serializers.Serializer):
     UIN_Dokumenta = serializers.CharField(max_length=255, allow_blank=True, read_only=True)
-    valiuta_ = serializers.CharField(max_length=3, required=False, default="840")
+    valiuta_ = serializers.CharField(max_length=3, required=False, default="840", read_only=True)
     data = DateStringField()
     startDate = DateStringField()
     endDate = DateStringField()

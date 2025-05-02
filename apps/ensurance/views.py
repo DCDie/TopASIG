@@ -28,7 +28,7 @@ from apps.ensurance.serializers import (
     SaveRcaDocumentSerializer,
     SendFileRequestSerializer,
 )
-from apps.ensurance.tasks import download_and_merge_documents
+from apps.ensurance.tasks import download_and_merge_documents, download_insurance_policy
 
 
 class RcaViewSet(GenericViewSet):
@@ -422,7 +422,7 @@ class MedicalInsuranceViewSet(GenericViewSet):
         # Validate input data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data["valiuta_"] = "840"
+        serializer.validated_data["DogMEDPH"][0]["valiuta_"] = "840"
         data = MedicinaAPI().calculate_tariff(serializer.validated_data)
         medical_insurance_company = MedicalInsuranceCompany.objects.first()
         data["DogMEDPH"][0]["IDNO"] = medical_insurance_company.idno
@@ -434,3 +434,53 @@ class MedicalInsuranceViewSet(GenericViewSet):
         return_data = RootReturnSerializer(data=[data], many=True)
         return_data.is_valid(raise_exception=True)
         return Response(return_data.data, status=status.HTTP_200_OK)
+
+    @extend_schema(responses={200: RootReturnSerializer(many=True)})
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="save-medical-insurance",
+        serializer_class=RootSerializer,
+        filter_backends=[],
+        pagination_class=None,
+    )
+    def save_medical_insurance(self, request):
+        """
+        Save the medical insurance based on input data.
+
+        This endpoint validates the input data through the associated serializer.
+        Upon successful validation, it processes the data and performs specific
+        logic to compute the estimated medical insurance cost. The computed result
+        is returned as part of the HTTP response.
+
+        Arguments:
+            request: REST framework's Request instance containing input data
+                for calculating medical insurance.
+
+        Returns:
+            Response containing the result of the medical insurance calculation
+            along with an appropriate HTTP status code.
+        """
+        # Validate input data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data["DogMEDPH"][0]["valiuta_"] = "840"
+        response_data = MedicinaAPI().create_contract(serializer.validated_data)
+        medical_insurance_company = MedicalInsuranceCompany.objects.first()
+        response_data["DogMEDPH"][0]["IDNO"] = medical_insurance_company.idno
+        response_data["DogMEDPH"][0]["Name"] = medical_insurance_company.name
+        response_data["DogMEDPH"][0]["is_active"] = medical_insurance_company.is_active
+        response_data["DogMEDPH"][0]["logo"] = (
+            medical_insurance_company.logo.url if medical_insurance_company.logo else static("public/default-logo.png")
+        )
+
+        document_id = response_data["DogMEDPH"][0]["UIN_Dokumenta"]
+        download_insurance_policy(document_id)
+
+        return Response(
+            {
+                "DocumentId": document_id,
+                "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/",
+            },
+            status=status.HTTP_200_OK,
+        )
