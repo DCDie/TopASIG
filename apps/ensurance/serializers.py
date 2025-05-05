@@ -263,8 +263,8 @@ class DogMEDPHReturnSerializer(DogMEDPHSerializer):
     startDate = DotDateField()
     endDate = DotDateField()
     persons = PersonReturnSerializer(many=True)
-    PrimaTotalaVAL = serializers.FloatField(read_only=True)
-    PrimaTotalaLEI = serializers.FloatField(read_only=True)
+    PrimaTotalaVAL = serializers.FloatField()
+    PrimaTotalaLEI = serializers.FloatField()
 
 
 class RootSerializer(serializers.Serializer):
