@@ -4,6 +4,7 @@ import qrcode
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from PIL import Image
@@ -15,11 +16,14 @@ from rest_framework.viewsets import GenericViewSet
 
 from apps.ensurance.constants import FileTypes
 from apps.ensurance.models import File
-from apps.payment.constants import StatusChoices
+from apps.payment.constants import MaibPaymentStatus, StatusChoices
+from apps.payment.maib_ecommerce import MaibEcommerceService
 from apps.payment.mia_maib import MaibQrCodeService
-from apps.payment.models import QrCode
+from apps.payment.models import MaibPayment, QrCode
 from apps.payment.serializers import (
-    QRCodeSerializer,
+    MaibPaymentCreateSerializer,
+    MaibPaymentSerializer,
+    QrCodeSerializer,
     SizeSerializer,
     VbPayeeQrDtoSerializer,
 )
@@ -46,7 +50,7 @@ class QrCodeViewSet(GenericViewSet):
 
     @extend_schema(
         request=VbPayeeQrDtoSerializer,
-        responses=QRCodeSerializer,
+        responses=QrCodeSerializer,
         parameters=[
             OpenApiParameter(
                 name="width",
@@ -140,9 +144,9 @@ class QrCodeViewSet(GenericViewSet):
             instance.save()
             if settings.DEBUG:
                 update_qr_status_if_debug.apply_async(args=[instance.uuid], countdown=15)
-        return Response(QRCodeSerializer(instance).data, status=status.HTTP_201_CREATED)
+        return Response(QrCodeSerializer(instance).data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(responses=QRCodeSerializer)
+    @extend_schema(responses=QrCodeSerializer)
     @action(detail=True, methods=["get"], url_path="status")
     def get_status(self, request, uuid: str):
         """
@@ -177,4 +181,140 @@ class QrCodeViewSet(GenericViewSet):
         ):
             instance.status = response_data["result"]["status"]
             instance.save()
-        return Response(QRCodeSerializer(instance).data)
+        return Response(QrCodeSerializer(instance).data)
+
+
+class MaibPaymentViewSet(GenericViewSet):
+    queryset = MaibPayment.objects.all()
+    serializer_class = MaibPaymentSerializer
+    permission_classes = []
+    authentication_classes = []
+
+    def get_serializer_class(self):
+        if self.action == "create_payment":
+            return MaibPaymentCreateSerializer
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        return MaibPayment.objects.all()
+
+    @action(detail=False, methods=["post"])
+    def create_payment(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+
+        items = data.get("items", [])
+        for item in items:
+            item["price"] = float(item["price"])
+
+        # Create payment record
+        payment = MaibPayment.objects.create(
+            amount=float(data["amount"]),
+            client_name="topasig.md",
+            client_email="info@topasig.md",
+            description=data.get("description"),
+            data={"items": data.get("items", [])},
+        )
+
+        # Initialize MAIB E-commerce service
+        maib_service = MaibEcommerceService()
+
+        try:
+            # Create payment in MAIB
+            payment_data = {
+                "amount": float(data["amount"]),
+                "currency": payment.currency,
+                "client_ip": request.META.get("REMOTE_ADDR"),
+                "client_name": payment.client_name,
+                "email": payment.client_email,
+                "description": data.get("description"),
+                "order_id": payment.id,
+                "items": data.get("items", []),
+            }
+
+            response = maib_service.create_payment(payment_data)
+
+            if not response.get("ok"):
+                payment.status = MaibPaymentStatus.FAILED
+                payment.save()
+                return Response({"error": "Failed to create payment"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update payment with MAIB data
+            result = response["result"]
+            payment.pay_id = result["payId"]
+            payment.payment_url = result["payUrl"]
+            payment.save()
+
+            return Response(MaibPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            payment.status = MaibPaymentStatus.FAILED
+            payment.save()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["get"], url_path="status")
+    def get_payment_status(self, request, pk=None):
+        """
+        Retrieves the status of a payment using its unique identifier (UUID).
+
+        This method interfaces with an external service to fetch the current
+        status of a payment. The status is then updated in the local database
+        record of the corresponding payment.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object containing the context of
+                the request.
+            pk (str): A unique identifier for the payment whose status needs to be
+                fetched. This should correspond to a record in the local database.
+
+        Returns:
+            Response: An HTTP response object containing either the updated status
+                information of the payment or an error message in case of a failure.
+        """
+        instance = get_object_or_404(MaibPayment, pk=pk)
+        if instance.status == MaibPaymentStatus.SUCCESS:
+            return Response(MaibPaymentSerializer(instance).data)
+        maib_service = MaibEcommerceService()
+        response_data = maib_service.get_payment_status(instance.pay_id)
+
+        # Update the status of the payment in the database
+        if response_data["result"]["status"] != instance.status:
+            instance.status = response_data["result"]["status"]
+            instance.save()
+        return Response(MaibPaymentSerializer(instance).data)
+
+    @action(detail=False, methods=["get"], url_path="callback")
+    def callback(self, request):
+        """
+        Handles the callback from MAIB after payment processing.
+
+        This method processes the callback data sent by MAIB and updates the
+        payment status in the local database. It also redirects the user to
+        the appropriate success or failure page based on the payment status.
+
+        Parameters:
+            request (HttpRequest): The HTTP request object containing the callback data.
+
+        Returns:
+            HttpResponse: An HTTP response object indicating the result of the callback
+                processing.
+        """
+        pay_id = request.GET.get("payId")
+        order_id = request.GET.get("orderId")
+
+        if not pay_id or not order_id:
+            return HttpResponse(status=400)
+
+        # Find payment by internal order_id
+        instance = MaibPayment.objects.get(id=order_id)
+
+        maib_service = MaibEcommerceService()
+        response_data = maib_service.get_payment_status(instance.pay_id)
+
+        # Update the status of the payment in the database
+        if response_data["result"]["status"] != instance.status:
+            instance.status = response_data["result"]["status"]
+            instance.save()
+        return Response(MaibPaymentSerializer(instance).data)

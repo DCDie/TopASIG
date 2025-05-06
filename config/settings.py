@@ -227,6 +227,10 @@ MAIB_MIA_BASE_URL = env.str("MAIB_MIA_BASE_URL")
 MAIB_CLIENT_ID = env.str("MAIB_CLIENT_ID")
 MAIB_CLIENT_SECRET = env.str("MAIB_CLIENT_SECRET")
 
+# MAIB E-commerce settings
+MAIB_PROJECT_ID = env("MAIB_PROJECT_ID", default="")
+MAIB_PROJECT_SECRET = env("MAIB_PROJECT_SECRET", default="")
+
 # Celery settings
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL")
 CELERY_CACHE_BACKEND = "default"
@@ -249,6 +253,10 @@ CELERY_BEAT_SCHEDULE = {
     "update_qr_status": {
         "task": "apps.payment.tasks.update_qr_status",
         "schedule": 3 * 60,  # 3 minutes
+    },
+    "check_payment_status": {
+        "task": "apps.payment.tasks.check_payment_status",
+        "schedule": 1 * 60,  # 1 minute
     },
 }
 

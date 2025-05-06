@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class QrTypeChoices(models.TextChoices):
@@ -32,3 +33,10 @@ class StatusChoices(models.TextChoices):
 class UnitsChoices(models.TextChoices):
     MM = "mm", "Minutes"
     SS = "ss", "Seconds"
+
+
+class MaibPaymentStatus(models.TextChoices):
+    PENDING = "PENDING", _("Pending")
+    SUCCESS = "OK", _("Success")
+    FAILED = "FAILED", _("Failed")
+    CANCELLED = "CANCELLED", _("Cancelled")

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.payment.constants import AmountTypeChoices, PmtContextChoices, QrTypeChoices, StatusChoices, UnitsChoices
-from apps.payment.models import QrCode
+from apps.payment.models import MaibPayment, QrCode
 
 
 class VbPayeeQrHeaderDtoSerializer(serializers.Serializer):
@@ -47,12 +47,24 @@ class CreatePayeeQrResponseSerializer(serializers.Serializer):
     qrCode = serializers.IntegerField(required=False)
 
 
-class QRCodeSerializer(serializers.ModelSerializer):
-    qr_as_image = serializers.URLField(required=False, source="file.file.url")
-
+class QrCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = QrCode
-        fields = "__all__"
+        fields = [
+            "uuid",
+            "order_id",
+            "type",
+            "amount_type",
+            "pmt_context",
+            "url",
+            "status",
+            "is_used",
+            "created_at",
+            "updated_at",
+            "file",
+            "data",
+        ]
+        read_only_fields = ["uuid", "order_id", "url", "status", "is_used", "created_at", "updated_at"]
 
 
 class PaymentDtoSerializer(serializers.Serializer):
@@ -82,3 +94,39 @@ class GetQrStatusResponseSerializer(serializers.Serializer):
 class SizeSerializer(serializers.Serializer):
     width = serializers.IntegerField(min_value=0, default=300)
     height = serializers.IntegerField(min_value=0, default=300)
+
+
+class MaibPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaibPayment
+        fields = [
+            "pay_id",
+            "amount",
+            "currency",
+            "status",
+            "client_name",
+            "client_email",
+            "client_phone",
+            "description",
+            "payment_url",
+            "created_at",
+            "updated_at",
+            "data",
+        ]
+        read_only_fields = ["pay_id", "status", "payment_url", "created_at", "updated_at"]
+
+
+class MaibPaymentItemSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=124)
+    quantity = serializers.IntegerField(min_value=1)
+    price = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=0.01, required=True, coerce_to_string=True
+    )
+
+
+class MaibPaymentCreateSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=0.01, required=True, coerce_to_string=True
+    )
+    description = serializers.CharField(max_length=124, required=False, allow_null=True)
+    items = serializers.ListField(child=MaibPaymentItemSerializer(), required=True, allow_null=False)
