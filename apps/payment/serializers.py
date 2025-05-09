@@ -48,6 +48,8 @@ class CreatePayeeQrResponseSerializer(serializers.Serializer):
 
 
 class QrCodeSerializer(serializers.ModelSerializer):
+    qr_as_image = serializers.URLField(required=False, source="file.file.url")
+
     class Meta:
         model = QrCode
         fields = [
@@ -63,8 +65,9 @@ class QrCodeSerializer(serializers.ModelSerializer):
             "updated_at",
             "file",
             "data",
+            "qr_as_image",
         ]
-        read_only_fields = ["uuid", "order_id", "url", "status", "is_used", "created_at", "updated_at"]
+        read_only_fields = ["uuid", "order_id", "url", "status", "is_used", "created_at", "updated_at", "qr_as_image"]
 
 
 class PaymentDtoSerializer(serializers.Serializer):
