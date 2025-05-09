@@ -100,6 +100,7 @@ class MaibPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaibPayment
         fields = [
+            "id",
             "pay_id",
             "amount",
             "currency",
@@ -113,7 +114,7 @@ class MaibPaymentSerializer(serializers.ModelSerializer):
             "updated_at",
             "data",
         ]
-        read_only_fields = ["pay_id", "status", "payment_url", "created_at", "updated_at"]
+        read_only_fields = ["id", "pay_id", "status", "payment_url", "created_at", "updated_at"]
 
 
 class MaibPaymentItemSerializer(serializers.Serializer):

@@ -70,6 +70,7 @@ class MaibPayment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     data = models.JSONField(default=dict, help_text="Additional payment data")
+    is_used = models.BooleanField(default=False, help_text="Whether the payment has been used", db_index=True)
 
     def __str__(self):
         return f"MAIB Payment {self.uuid} - {self.status}"

@@ -21,6 +21,7 @@ from apps.ensurance.serializers import (
     CalculateGreenCardOutputSerializer,
     CalculateRCAInputSerializer,
     CalculateRCAOutputSerializer,
+    CalculateRootSerializer,
     GetFileRequestSerializer,
     GreenCardDocumentModelSerializer,
     RootReturnSerializer,
@@ -109,8 +110,8 @@ class RcaViewSet(GenericViewSet):
     def save_rca(self, request):
         """
         Save RCA Document using the provided data. This method validates the input,
-        marks the corresponding QR code as used, invokes an external SOAP method to save
-        the RCA document, and returns the document ID in the response.
+        marks the corresponding payment method (QR code or MAIB payment) as used,
+        invokes an external SOAP method to save the RCA document, and returns the document ID.
 
         Args:
             request (HttpRequest): The HTTP request object containing input data.
@@ -119,7 +120,7 @@ class RcaViewSet(GenericViewSet):
             Response: A Response object containing the document ID.
 
         Raises:
-            ValidationError: If the input data is invalid.
+            ValidationError: If the input data is invalid or no valid payment is provided.
         """
         with transaction.atomic():
             # Validate input data
@@ -136,11 +137,21 @@ class RcaViewSet(GenericViewSet):
                 "5": "RentACar",
             }
 
-            qr_code = serializer.validated_data.pop("qrCode")
-            serializer.validated_data["PaymentDate"] = qr_code.updated_at.date()
+            # Handle payment method (either QR code or MAIB payment)
+            payment_date = None
+            if "qrCode" in serializer.validated_data:
+                qr_code = serializer.validated_data.pop("qrCode")
+                qr_code.is_used = True
+                qr_code.save()
+                payment_date = qr_code.updated_at.date()
+            elif "maibPayment" in serializer.validated_data:
+                maib_payment = serializer.validated_data.pop("maibPayment")
+                maib_payment.is_used = True
+                maib_payment.save()
+                payment_date = maib_payment.updated_at.date()
+
+            serializer.validated_data["PaymentDate"] = payment_date
             serializer.validated_data["OperatingMode"] = operating_modes_strings[str(operating_modes)]
-            qr_code.is_used = True
-            qr_code.save()
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_rca_document(serializer.validated_data)
@@ -213,7 +224,8 @@ class RcaViewSet(GenericViewSet):
     def save_green_card(self, request):
         """
         Saves a green card document by validating the incoming request data,
-        invoking an external SOAP service via a client, and returning an
+        marks the corresponding payment method (QR code or MAIB payment) as used,
+        invokes an external SOAP service via a client, and returns an
         appropriate HTTP response.
 
         Parameters:
@@ -229,9 +241,7 @@ class RcaViewSet(GenericViewSet):
         Raises:
             ValidationError
                 Raised if the incoming request data fails validation based on the
-                serializer schema.
-            Other SOAP-related errors depending on the behavior of the external SOAP
-            service client during the operation.
+                serializer schema or no valid payment method is provided.
         """
 
         with transaction.atomic():
@@ -239,11 +249,20 @@ class RcaViewSet(GenericViewSet):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
-            qr_code = serializer.validated_data.pop("qrCode")
-            qr_code.is_used = True
-            qr_code.save()
+            # Handle payment method (either QR code or MAIB payment)
+            payment_date = None
+            if "qrCode" in serializer.validated_data:
+                qr_code = serializer.validated_data.pop("qrCode")
+                qr_code.is_used = True
+                qr_code.save()
+                payment_date = qr_code.updated_at
+            elif "maibPayment" in serializer.validated_data:
+                maib_payment = serializer.validated_data.pop("maibPayment")
+                maib_payment.is_used = True
+                maib_payment.save()
+                payment_date = maib_payment.updated_at
 
-            serializer.validated_data["PaymentDate"] = qr_code.updated_at
+            serializer.validated_data["PaymentDate"] = payment_date
 
             # Call the SOAP method
             response = RcaExportServiceClient().save_greencard_document(serializer.validated_data)
@@ -398,7 +417,7 @@ class MedicalInsuranceViewSet(GenericViewSet):
         detail=False,
         methods=["post"],
         url_path="calculate-medical-insurance",
-        serializer_class=RootSerializer,
+        serializer_class=CalculateRootSerializer,
         filter_backends=[],
         pagination_class=None,
     )
@@ -450,37 +469,50 @@ class MedicalInsuranceViewSet(GenericViewSet):
 
         This endpoint validates the input data through the associated serializer.
         Upon successful validation, it processes the data and performs specific
-        logic to compute the estimated medical insurance cost. The computed result
-        is returned as part of the HTTP response.
+        logic to save the medical insurance. A valid payment method (either QR code
+        or MAIB payment) is required for this operation.
 
         Arguments:
             request: REST framework's Request instance containing input data
-                for calculating medical insurance.
+                for saving medical insurance.
 
         Returns:
-            Response containing the result of the medical insurance calculation
-            along with an appropriate HTTP status code.
+            Response containing the result along with an appropriate HTTP status code.
         """
-        # Validate input data
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.validated_data["DogMEDPH"][0]["valiuta_"] = "840"
-        response_data = MedicinaAPI().create_contract(serializer.validated_data)
-        medical_insurance_company = MedicalInsuranceCompany.objects.first()
-        response_data["DogMEDPH"][0]["IDNO"] = medical_insurance_company.idno
-        response_data["DogMEDPH"][0]["Name"] = medical_insurance_company.name
-        response_data["DogMEDPH"][0]["is_active"] = medical_insurance_company.is_active
-        response_data["DogMEDPH"][0]["logo"] = (
-            medical_insurance_company.logo.url if medical_insurance_company.logo else static("public/default-logo.png")
-        )
+        with transaction.atomic():
+            # Validate input data
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
 
-        document_id = response_data["DogMEDPH"][0]["UIN_Dokumenta"]
-        download_insurance_policy(document_id)
+            # Handle payment method (either QR code or MAIB payment)
+            if "qrCode" in serializer.validated_data:
+                qr_code = serializer.validated_data.pop("qrCode")
+                qr_code.is_used = True
+                qr_code.save()
+            elif "maibPayment" in serializer.validated_data:
+                maib_payment = serializer.validated_data.pop("maibPayment")
+                maib_payment.is_used = True
+                maib_payment.save()
 
-        return Response(
-            {
-                "DocumentId": document_id,
-                "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/",
-            },
-            status=status.HTTP_200_OK,
-        )
+            serializer.validated_data["DogMEDPH"][0]["valiuta_"] = "840"
+            response_data = MedicinaAPI().create_contract(serializer.validated_data)
+            medical_insurance_company = MedicalInsuranceCompany.objects.first()
+            response_data["DogMEDPH"][0]["IDNO"] = medical_insurance_company.idno
+            response_data["DogMEDPH"][0]["Name"] = medical_insurance_company.name
+            response_data["DogMEDPH"][0]["is_active"] = medical_insurance_company.is_active
+            response_data["DogMEDPH"][0]["logo"] = (
+                medical_insurance_company.logo.url
+                if medical_insurance_company.logo
+                else static("public/default-logo.png")
+            )
+
+            document_id = response_data["DogMEDPH"][0]["UIN_Dokumenta"]
+            download_insurance_policy(document_id)
+
+            return Response(
+                {
+                    "DocumentId": document_id,
+                    "url": f"{settings.CSRF_TRUSTED_ORIGINS[0]}/api/rca/{document_id}/get-rca-file/",
+                },
+                status=status.HTTP_200_OK,
+            )

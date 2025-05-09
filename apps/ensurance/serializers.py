@@ -10,8 +10,8 @@ from apps.ensurance.constants import (
     PossessionBase,
     TermInsurance,
 )
-from apps.payment.constants import StatusChoices
-from apps.payment.models import QrCode
+from apps.payment.constants import MaibPaymentStatus, StatusChoices
+from apps.payment.models import MaibPayment, QrCode
 
 
 class CalculateRCAInputSerializer(serializers.Serializer):
@@ -127,6 +127,26 @@ class VehicleModelSerializer(serializers.Serializer):
     Seats = serializers.IntegerField(required=False, default=5)
 
 
+class PaymentValidator:
+    """
+    A validator to ensure that either qrCode or maibPayment is provided
+    """
+
+    requires_context = True
+
+    def __call__(self, attrs, serializer):
+        qr_code = attrs.get("qrCode")
+        maib_payment = attrs.get("maibPayment")
+
+        if not qr_code and not maib_payment:
+            raise serializers.ValidationError("Either qrCode or maibPayment must be provided")
+
+        if qr_code and maib_payment:
+            raise serializers.ValidationError("Only one payment method (qrCode or maibPayment) can be provided")
+
+        return attrs
+
+
 class SaveRcaDocumentSerializer(serializers.Serializer):
     Company = CompanyModelSerializer()
     InsuredPhysicalPerson = PhysicalPersonModelSerializer(required=False)
@@ -142,7 +162,17 @@ class SaveRcaDocumentSerializer(serializers.Serializer):
         help_text="QR Code UUID",
         queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),
         slug_field="uuid",
+        required=False,
     )
+    maibPayment = serializers.SlugRelatedField(
+        help_text="MAIB Payment ID",
+        queryset=MaibPayment.objects.filter(status=MaibPaymentStatus.SUCCESS, is_used=False),
+        slug_field="pay_id",
+        required=False,
+    )
+
+    class Meta:
+        validators = [PaymentValidator()]
 
     @staticmethod
     def validate_StartDate(value):  # noqa: N802X
@@ -162,12 +192,22 @@ class GreenCardDocumentModelSerializer(serializers.Serializer):
     DocumentPossessionBaseDate = serializers.DateTimeField(allow_null=True)
     GreenCardZone = serializers.ChoiceField(choices=GreenCardZones.choices)
     qrCode = serializers.SlugRelatedField(
-        required=True,
-        allow_null=False,
+        required=False,
+        allow_null=True,
         help_text="QR Code UUID",
         queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),
         slug_field="uuid",
     )
+    maibPayment = serializers.SlugRelatedField(
+        required=False,
+        allow_null=True,
+        help_text="MAIB Payment ID",
+        queryset=MaibPayment.objects.filter(status=MaibPaymentStatus.SUCCESS, is_used=False),
+        slug_field="pay_id",
+    )
+
+    class Meta:
+        validators = [PaymentValidator()]
 
     @staticmethod
     def validate_StartDate(value):  # noqa: N802
@@ -218,9 +258,7 @@ class DogMEDPHSerializer(serializers.Serializer):
     TaraUIN = serializers.CharField(max_length=255)
     TipSportUIN = serializers.CharField(max_length=255, allow_blank=True)
     SARS_COV19 = serializers.BooleanField(required=False, default=True)
-    # ZileDeAcoperire = serializers.IntegerField()
     SumaDeAsig = serializers.IntegerField(required=False, default=30000)
-    # MesiatsevPeriodaStrahovania = serializers.IntegerField()
     persons = PersonSerializer(many=True)
 
     def to_internal_value(self, data):
@@ -267,8 +305,27 @@ class DogMEDPHReturnSerializer(DogMEDPHSerializer):
     PrimaTotalaLEI = serializers.FloatField()
 
 
+class CalculateRootSerializer(serializers.Serializer):
+    DogMEDPH = DogMEDPHSerializer(many=True)
+
+
 class RootSerializer(serializers.Serializer):
     DogMEDPH = DogMEDPHSerializer(many=True)
+    qrCode = serializers.SlugRelatedField(
+        help_text="QR Code UUID",
+        queryset=QrCode.objects.filter(status=StatusChoices.PAID, is_used=False),
+        slug_field="uuid",
+        required=False,
+    )
+    maibPayment = serializers.SlugRelatedField(
+        help_text="MAIB Payment ID",
+        queryset=MaibPayment.objects.filter(status=MaibPaymentStatus.SUCCESS, is_used=False),
+        slug_field="pay_id",
+        required=False,
+    )
+
+    class Meta:
+        validators = [PaymentValidator()]
 
 
 class RootReturnSerializer(serializers.Serializer):
