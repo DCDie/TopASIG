@@ -20,7 +20,7 @@ class MedicinaAPI:
     All API endpoints are under the path: /hs/medicina_peste_hotare/v1/
     """
 
-    def __init__(self, base_url: str = settings.DONARIS_BASE_URL):
+    def __init__(self, base_url: str | None = None):
         """
         Initialize the API client.
 
@@ -28,6 +28,9 @@ class MedicinaAPI:
         """
         password = settings.DONARIS_PASSWORD
         login = settings.DONARIS_USERNAME
+        if not base_url:
+            base_url = settings.DONARIS_TEST_URL if settings.DONARIS_IS_TEST else settings.DONARIS_PROD_URL
+
         self.base_url = base_url.rstrip("/")
         self.api_path = "/hs/medicina_peste_hotare/v1/"
         self.session = requests.Session()
