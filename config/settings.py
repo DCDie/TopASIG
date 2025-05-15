@@ -321,8 +321,6 @@ JAZZMIN_SETTINGS = {
 }
 
 # Donaris
-DONARIS_TEST_URL = env.str("DONARIS_TEST_URL", default="")
-DONARIS_PROD_URL = env.str("DONARIS_PROD_URL", default="")
+DONARIS_BASE_URL = env.str("DONARIS_BASE_URL", default="")
 DONARIS_USERNAME = env.str("DONARIS_USERNAME")
 DONARIS_PASSWORD = env.str("DONARIS_PASSWORD")
-DONARIS_IS_TEST = env.bool("DONARIS_IS_TEST", default=True)

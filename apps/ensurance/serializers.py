@@ -244,6 +244,7 @@ class PersonSerializer(serializers.Serializer):
     idnp = serializers.CharField(max_length=13)
     fullName = serializers.CharField(max_length=255)
     birthday = DateStringField()
+    Pasaport = serializers.CharField(max_length=255, allow_blank=True)
 
 
 class DogMEDPHSerializer(serializers.Serializer):

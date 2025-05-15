@@ -1,12 +1,13 @@
+import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
-from pathlib import Path
 
 import PyPDF2
 from celery import shared_task
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.ensurance.constants import DocumentType, FileTypes
+from apps.ensurance.donaris import MedicinaAPI
 from apps.ensurance.models import File
 from apps.ensurance.rca import RcaExportServiceClient
 
@@ -89,19 +90,48 @@ def download_insurance_policy(document_id) -> int:
     store it as a single File instance in the database.
     """
 
-    with Path("test.pdf").open("rb") as f:
-        file_content = f.read()
-        insurance_policy_file = SimpleUploadedFile(
-            f"{document_id}_insurance_policy.pdf",
-            file_content,
-            content_type="application/pdf",
-        )
+    # Download the INSURANCE_POLICY document
+    response = MedicinaAPI().get_print_forms(
+        {
+            "DogMEDPH": [
+                {
+                    "UIN_Dokumenta": document_id,
+                }
+            ]
+        }
+    )
 
-        # Finally, create the File record in your database
-        file_obj = File.objects.create(
-            external_id=document_id,
-            type=FileTypes.MEDICAL_INSURANCE,
-            file=insurance_policy_file,
-        )
+    # Extract the files content from the response
+    files_content: list = response["Rezulitat_Metoda_medicina_forme_printate"]
 
-        return file_obj.id
+    if not files_content:
+        raise ValueError("No files found in the response.")
+
+    # Extract files, merge them, and save
+    pdf_writer = PyPDF2.PdfWriter()
+    for file_content in files_content:
+        # Assuming file_content is a base64 string in field "BASE64Str"
+        pdf_reader = PyPDF2.PdfReader(BytesIO(base64.b64decode(file_content["BASE64Str"])))
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+    # Now, write out the merged PDF to a BytesIO buffer
+    merged_stream = BytesIO()
+    pdf_writer.write(merged_stream)
+    merged_stream.seek(0)
+
+    # Create a Django File object from the merged PDF
+    file_content = merged_stream.getvalue()
+    insurance_policy_file = SimpleUploadedFile(
+        f"{document_id}_insurance_policy.pdf",
+        file_content,
+        content_type="application/pdf",
+    )
+    # Create a Django File object from the merged PDF
+    file_obj = File.objects.create(
+        external_id=document_id,
+        type=FileTypes.MEDICAL_INSURANCE,
+        file=insurance_policy_file,
+        data=response["Rezulitat_Metoda_medicina_forme_printate"],
+    )
+
+    return file_obj.id

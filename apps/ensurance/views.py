@@ -495,6 +495,47 @@ class MedicalInsuranceViewSet(GenericViewSet):
                 maib_payment.save()
 
             serializer.validated_data["DogMEDPH"][0]["valiuta_"] = "840"
+            serializer.validated_data["DogMEDPH"][0]["kontragenti_strakhovatel"] = {
+                "kontragenti_fiskkod": "0200415464644",
+                "naimenovanie": "Blormy Anton",
+                "adres": "str.Stefan cel Mare 1",
+                "nerezident": "da",
+                "datarojdenia": "1985.01.22",
+                "vidcontragenta": "fizicheskoelico",
+                "polnoienaimenovanie": "Blormy Anton S.A.",
+                "vidivzaimootnosheniackontragentom": "fizicheskoelico",
+                "stranakod": "33e8028d-48e6-4621-8c58-744b0ba31526",
+                "gorodkod": "a0ae7112-c0dd-11e4-80c5-0cc47a1e4c62",
+                "Email": "anton@gmail.com",
+                "iuradres": "Chisinau Mesager 4",
+                "pochtadres": "str.Stefan cel Mare 1",
+                "rukovoditel": "Bunescu Alexandru",
+                "dolzhnostrukovoditeljaCod": "3e46cab0-2bf1-11e7-812a-0cc47a1e4c63",
+                "SeriaPasaport": "B",
+                "NumPasaport": "1396825",
+                "CetatenieNonRM": "true",
+                "CFTaraDeOrigine": "",
+                "TaraDeOrigineUIN": "22871557-2350-428c-a23d-ae1906fdf2c9",
+            }
+            serializer.validated_data["DogMEDPH"][0]["kontragenti_kontraktant"] = {
+                "kontragenti_fiskkod": "1236547893021",
+                "naimenovanie": "Brustyn Anton",
+                "nerezident": "da",
+                "datarojdenia": "1985.01.22",
+                "vidcontragenta": "fizicheskoelico",
+                "polnoienaimenovanie": "Brustyn Anton S.A.",
+                "vidivzaimootnosheniackontragentom": "fizicheskoelico",
+                "stranakod": "33e8028d-48e6-4621-8c58-744b0ba31526",
+                "gorodkod": "a0ae7112-c0dd-11e4-80c5-0cc47a1e4c62",
+                "Email": "anton@gmail.com",
+                "iuradres": "Chisinau Mesager 4",
+                "pochtadres": "str.Stefan cel Mare 1",
+                "rukovoditel": "Bunescu Alexandru",
+                "dolzhnostrukovoditeljaCod": "3e46cab0-2bf1-11e7-812a-0cc47a1e4c63",
+                "SeriaPasaport": "B",
+                "NumPasaport": "1396825",
+            }
+
             response_data = MedicinaAPI().create_contract(serializer.validated_data)
             medical_insurance_company = MedicalInsuranceCompany.objects.first()
             response_data["DogMEDPH"][0]["IDNO"] = medical_insurance_company.idno

@@ -1,5 +1,4 @@
 import contextlib
-from uuid import uuid4
 
 import requests
 from django.conf import settings
@@ -20,7 +19,7 @@ class MedicinaAPI:
     All API endpoints are under the path: /hs/medicina_peste_hotare/v1/
     """
 
-    def __init__(self, base_url: str | None = None):
+    def __init__(self, base_url: str = settings.DONARIS_BASE_URL):
         """
         Initialize the API client.
 
@@ -28,8 +27,6 @@ class MedicinaAPI:
         """
         password = settings.DONARIS_PASSWORD
         login = settings.DONARIS_USERNAME
-        if not base_url:
-            base_url = settings.DONARIS_TEST_URL if settings.DONARIS_IS_TEST else settings.DONARIS_PROD_URL
 
         self.base_url = base_url.rstrip("/")
         self.api_path = "/hs/medicina_peste_hotare/v1/"
@@ -199,91 +196,7 @@ class MedicinaAPI:
         :param contract_data: Dictionary with the contract data.
         :return: JSON response containing, for example, the created contract number.
         """
-        # return self._post("medicina_sozdati_polis", json_data=contract_data)
-        return {
-            "DogMEDPH": [
-                {
-                    "UIN_Dokumenta": str(uuid4()),
-                    "valiuta_": "978",
-                    "data": "2025.01.15",
-                    "startDate": "2025.01.16",
-                    "endDate": "2025.01.25",
-                    "kontragenti_kontraktant": {
-                        "kontragenti_fiskkod": "1236547893021",
-                        "naimenovanie": "Brustyn Anton",
-                        "nerezident": "da",
-                        "datarojdenia": "1985.01.22",
-                        "vidcontragenta": "Частное лицо",
-                        "polnoienaimenovanie": "Brustyn Anton S.A.",
-                        "vidivzaimootnosheniackontragentom": "Физические лица",
-                        "stranakod": "33e8028d-48e6-4621-8c58-744b0ba31526",
-                        "gorodkod": "Râbnița",
-                        "Email": "anton@gmail.com",
-                        "iuradres": "Chisinau Mesager 4",
-                        "pochtadres": "str.Stefan cel Mare 1",
-                        "rukovoditel": "Bunescu Alexandru",
-                        "dolzhnostrukovoditeljaCod": "00000000-0000-0000-0000-000000000000",
-                        "SeriaPasaport": "B",
-                        "NumPasaport": "1396825",
-                    },
-                    "kontragenti_strakhovatel": {
-                        "kontragenti_fiskkod": "0200415464644",
-                        "naimenovanie": "Blormy Anton",
-                        "nerezident": "da",
-                        "datarojdenia": "1985.01.22",
-                        "vidcontragenta": "Частное лицо",
-                        "polnoienaimenovanie": "Blormy Anton S.A.",
-                        "vidivzaimootnosheniackontragentom": "Физические лица",
-                        "stranakod": "33e8028d-48e6-4621-8c58-744b0ba31526",
-                        "gorodkod": "Râbnița",
-                        "Email": "anton@gmail.com",
-                        "iuradres": "Chisinau Mesager 4",
-                        "pochtadres": "str.Stefan cel Mare 1",
-                        "rukovoditel": "Bunescu Alexandru",
-                        "dolzhnostrukovoditeljaCod": "00000000-0000-0000-0000-000000000000",
-                        "SeriaPasaport": "B",
-                        "NumPasaport": "1396825",
-                        "CetatenieNonRM": "TRUE",
-                        "CFTaraDeOrigine": "",
-                        "TaraDeOrigineUIN": "22871557-2350-428c-a23d-ae1906fdf2c9",
-                        "TaraDeOrigineDenumire": "Republic of Moldova",
-                    },
-                    "ProductUIN": "04951029-1df2-11e7-8125-0cc47a1e4c63",
-                    "ProductDenumire": "Standart",
-                    "RegiuniUIN": "d656b87e-9787-4a77-b5b2-ff32650864b6",
-                    "RegiuneDenumire": "World without  USA, Canada, Japonia, Australia",
-                    "ScopulCalatorieiUIN": "16c00586-d3a2-11e9-81db-0cc47a1e4c63",
-                    "ScopulCalatorieiDenumire": "Turism fara activitati sportive",
-                    "TaraUIN": "68320c50-d91b-437c-a561-820372587c84",
-                    "TaraDenumire": "Ukraine",
-                    "TipSportUIN": "00000000-0000-0000-0000-000000000000",
-                    "TipSportDenumire": "",
-                    "SARS_COV19": "FALSE",
-                    "ZileDeAcoperire": "10",
-                    "MesiatsevPeriodaStrahovania": "0",
-                    "SumaDeAsig": 30000,
-                    "persons": [
-                        {
-                            "idnp": "2003025090805",
-                            "fullName": "CIRLIG DOINA",
-                            "birthday": "1990.01.01",
-                            "Pasaport": "",
-                            "PrimaVAL": "4,2",
-                        },
-                        {
-                            "idnp": "2003025090895",
-                            "fullName": "CIRLIG DOINA",
-                            "birthday": "1990.01.01",
-                            "Pasaport": "",
-                            "PrimaVAL": "4,2",
-                        },
-                    ],
-                    "NumarContract": "MED2025-000008",
-                    "PrimaTotalaVAL": "8,4",
-                    "PrimaTotalaLEI": "161,2",
-                }
-            ]
-        }
+        return self._post("medicina_sozdati_polis", json_data=contract_data)
 
     def get_contract_info(self, uin_dokumenta):
         """
